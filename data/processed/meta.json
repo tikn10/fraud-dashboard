@@ -1,0 +1,12 @@
+{
+  "n_transactions": 17357861,
+  "n_fraud": 94851,
+  "fraud_rate": 0.005464440578248668,
+  "n_cards": 9971,
+  "ts_min": "2019-01-01 00:00:07",
+  "ts_max": "2020-12-31 23:59:59",
+  "n_source_files": 60,
+  "plot_sample_rows": 267481,
+  "nonfraud_sample_frac": 0.01,
+  "created": "2026-06-10 15:22:43"
+}
