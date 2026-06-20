@@ -9,16 +9,24 @@ Uni-Projekt: Analyse und Präsentation synthetischer Kreditkartentransaktionen
 fraud_dashboard/
 ├── config.py                  # Pfade, Konstanten, Farbschema (zentral!)
 ├── requirements.txt
+├── results/                   # Modell-Ergebnisse aus den Team-Logs (klein, im Repo)
+│   ├── model_results.json
+│   └── rf_threshold_curve.csv
 ├── scripts/
-│   └── 01_preprocess.py       # Pipeline: 60 Roh-CSVs -> Parquet + Aggregate
+│   ├── 01_preprocess.py       # Pipeline: 60 Roh-CSVs -> Parquet + Aggregate
+│   └── 02_train_and_predict.py# RF nachtrainieren -> Fallbeispiele für Case Explorer
 ├── notebooks/
-│   └── 01_rohdaten_check.ipynb  # Erste Sichtung der Roh- & aufbereiteten Daten
+│   └── 01_rohdaten_check.ipynb
 ├── app/
 │   ├── Home.py                # Streamlit-Startseite
 │   ├── utils.py               # Loader, Plotly-Theme, Helfer
 │   ├── pages/
 │   │   ├── 1_🗂️_Datensatz.py
-│   │   └── 2_🔍_Explorative_Analyse.py
+│   │   ├── 2_🔍_Explorative_Analyse.py
+│   │   ├── 3_🧬_Feature_Engineering.py
+│   │   ├── 4_🏆_Modellvergleich.py
+│   │   ├── 5_🎚️_Threshold_und_Kosten.py
+│   │   └── 6_🔬_Case_Explorer.py
 │   └── .streamlit/config.toml # Dunkles Theme
 └── data/processed/            # Output der Pipeline (wird erzeugt)
 ```
@@ -60,6 +68,21 @@ Karten erscheinen nur als Hash-ID + letzte 4 Ziffern. Das Faker-Artefakt
 ```bat
 streamlit run app\Home.py
 ```
+
+## 2b) Fallbeispiele für den Case Explorer erzeugen (optional, einmalig)
+
+Der Case Explorer braucht Vorhersagen pro Transaktion. Diese erzeugt ein Skript,
+das den Random Forest auf dem Modeling-Parquet des Teams nachtrainiert:
+
+```bat
+pip install scikit-learn
+python scripts\02_train_and_predict.py
+```
+
+Pfad zum Modeling-Parquet in `config.py` -> `MODELING_DIR` (Standard:
+`...\credit_card_fraud\modeling`). Das Skript schreibt
+`data/processed/case_explorer.parquet` (klein, kommt mit ins Repo). Ohne diese
+Datei zeigt die Case-Explorer-Seite eine Anleitung statt eines Fehlers.
 
 ## 3) Notebook (optional)
 

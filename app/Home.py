@@ -49,7 +49,9 @@ wurden dabei entfernt bzw. maskiert.
 **Seiten:**
 1. **Datensatz** – Struktur, Segmente und ein Blick in die (maskierten) Rohdaten
 2. **Explorative Analyse** – Wo versteckt sich Fraud? Zeit, Betrag, Kategorie, Segment
-3. *Modellvergleich, Threshold-Analyse und Case Explorer folgen, sobald
-   Modell-Ergebnisse vorliegen.*
+3. **Feature Engineering** – von Rohspalten zu prädiktiven Merkmalen
+4. **Modellvergleich** – vier Modelle, die richtigen Metriken für seltene Ereignisse
+5. **Threshold & Kosten** – der Schwellwert als Abwägung zwischen Treffern und Fehlalarmen
+6. **Case Explorer** – einzelne Transaktionen und Modellfehler im Detail
 """
     )

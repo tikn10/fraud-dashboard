@@ -1,0 +1,136 @@
+{
+  "test_size": 173579,
+  "source": "model_comparison_log.txt (gemeinsamer Lauf) + model_log.txt (RF-Threshold-Kurve)",
+  "split_note": "Zuf\u00e4lliger stratifizierter Split (random_state=42). Kein zeitbasierter Split; Threshold auf dem Testset optimiert. Metriken daher eher Obergrenze.",
+  "n_fraud_test": 948,
+  "models": {
+    "Random Forest": {
+      "threshold": 0.25,
+      "precision": 0.8451,
+      "recall": 0.7827,
+      "f1": 0.8127,
+      "cm": [
+        [
+          172495,
+          136
+        ],
+        [
+          206,
+          742
+        ]
+      ],
+      "importances": {
+        "amt": 0.4068,
+        "amt_ratio_7d": 0.18,
+        "hour": 0.1612,
+        "velocity_1h": 0.0366,
+        "age": 0.0319,
+        "merch_long": 0.0212,
+        "city_pop_x": 0.0212,
+        "dist_km": 0.021,
+        "merch_lat": 0.0209,
+        "category_grocery_pos": 0.0177
+      }
+    },
+    "XGBoost": {
+      "threshold": 0.9,
+      "precision": 0.7436,
+      "recall": 0.8291,
+      "f1": 0.784,
+      "cm": [
+        [
+          172360,
+          271
+        ],
+        [
+          162,
+          786
+        ]
+      ],
+      "importances": {
+        "amt": 0.3963,
+        "amt_ratio_7d": 0.102,
+        "hour": 0.0818,
+        "category_gas_transport": 0.0648,
+        "category_grocery_pos": 0.0537,
+        "category_grocery_net": 0.0304,
+        "category_misc_net": 0.028,
+        "category_food_dining": 0.0245,
+        "velocity_1h": 0.0201,
+        "category_shopping_pos": 0.0184
+      }
+    },
+    "LightGBM": {
+      "threshold": 0.9,
+      "precision": 0.5649,
+      "recall": 0.9093,
+      "f1": 0.6968,
+      "cm": [
+        [
+          171967,
+          664
+        ],
+        [
+          86,
+          862
+        ]
+      ],
+      "importances": {
+        "amt": 705,
+        "amt_ratio_7d": 483,
+        "hour": 442,
+        "age": 250,
+        "city_pop_x": 130,
+        "dist_km": 126,
+        "merch_lat": 109,
+        "velocity_1h": 92,
+        "merch_long": 81,
+        "gender_M": 77
+      }
+    },
+    "Logistic Regression": {
+      "threshold": 0.9,
+      "precision": 0.2771,
+      "recall": 0.5559,
+      "f1": 0.3698,
+      "cm": [
+        [
+          171256,
+          1375
+        ],
+        [
+          421,
+          527
+        ]
+      ],
+      "importances": null
+    }
+  },
+  "error_profile": {
+    "note": "Mittelwerte je Gruppe aus der RF-Diagnose (model_log.txt).",
+    "features": [
+      "amt",
+      "dist_km",
+      "age",
+      "velocity_1h",
+      "amt_ratio_7d",
+      "hour"
+    ],
+    "missed_fn": [
+      191.77,
+      78.06,
+      38.55,
+      0.46,
+      3.96,
+      9.81
+    ],
+    "caught_tp": [
+      649.4,
+      77.51,
+      43.2,
+      1.05,
+      4.63,
+      14.55
+    ]
+  }
+}

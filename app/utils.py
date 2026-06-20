@@ -60,6 +60,27 @@ def load_plot_sample() -> pd.DataFrame:
     return df
 
 
+@st.cache_data(show_spinner=False)
+def load_model_results() -> dict:
+    return json.loads(cfg.MODEL_RESULTS_PATH.read_text())
+
+
+@st.cache_data(show_spinner=False)
+def load_threshold_curve() -> pd.DataFrame:
+    return pd.read_csv(cfg.RF_THRESHOLD_CURVE_PATH)
+
+
+def case_explorer_available() -> bool:
+    return cfg.CASE_EXPLORER_PATH.exists()
+
+
+@st.cache_data(show_spinner="Lade Fallbeispiele …")
+def load_case_explorer() -> pd.DataFrame:
+    df = pd.read_parquet(cfg.CASE_EXPLORER_PATH)
+    df["Klasse"] = df["y_true"].map({0: "legitim", 1: "Fraud"})
+    return df
+
+
 # ---------------------------------------------------------------------------
 # Formatierung & UI-Bausteine
 # ---------------------------------------------------------------------------
