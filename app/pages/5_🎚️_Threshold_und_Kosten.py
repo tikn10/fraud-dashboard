@@ -22,17 +22,18 @@ der **Schwellwert** entscheidet, ab wann eine Transaktion als Betrug gilt. Diese
 eine Stellschraube verändert alles – und es gibt **kein objektiv richtiges**
 Optimum, sondern nur das, was zu den Kosten von Fehlern passt.
 
-> Beispielmodell: **Random Forest**. Schiebt den Schwellwert und beobachtet, wie
-> sich Treffer, Fehlalarme und Kosten verschieben.
+> Illustriert an einem **Random-Forest-Lauf**. Schiebt den Schwellwert und
+> beobachtet, wie sich Treffer, Fehlalarme und Kosten verschieben.
 """
 )
 
 curve = u.load_threshold_curve()
-res = u.load_model_results()
 
-# Fraud-/Normal-Gesamtzahlen aus der RF-Konfusionsmatrix (model_log-Lauf: 944 Fraud)
+# Illustrativer RF-Lauf mit vollständiger Schwellwert-Kurve (eigene, in sich
+# konsistente Zahlenbasis – unabhängig vom finalen 10k-Vergleichs-Set, für das
+# nur ein einzelner Arbeitspunkt je Modell vorliegt).
 N_FRAUD = 944
-N_LEGIT = res["test_size"] - N_FRAUD
+N_LEGIT = 172_635
 
 # --- Slider ---------------------------------------------------------------
 thr = st.select_slider(

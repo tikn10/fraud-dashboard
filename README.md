@@ -10,8 +10,11 @@ fraud_dashboard/
 ├── config.py                  # Pfade, Konstanten, Farbschema (zentral!)
 ├── requirements.txt
 ├── results/                   # Modell-Ergebnisse aus den Team-Logs (klein, im Repo)
-│   ├── model_results.json
-│   └── rf_threshold_curve.csv
+│   ├── model_results.json     # finale ML-Metriken (4 Modelle, 10k-EVAL-Set)
+│   ├── rf_threshold_curve.csv # illustrative Schwellwert-Kurve (RF)
+│   ├── llm_results.json       # LLM-Metriken (Claude Haiku 4.5, 6 Läufe)
+│   ├── rules_raw.txt          # vom LLM abgeleitete Regeln (Rohdaten-Sicht)
+│   └── rules_engineered.txt   # vom LLM abgeleitete Regeln (aufbereitet)
 ├── scripts/
 │   ├── 01_preprocess.py       # Pipeline: 60 Roh-CSVs -> Parquet + Aggregate
 │   └── 02_train_and_predict.py# RF nachtrainieren -> Fallbeispiele für Case Explorer
@@ -26,7 +29,8 @@ fraud_dashboard/
 │   │   ├── 3_🧬_Feature_Engineering.py
 │   │   ├── 4_🏆_Modellvergleich.py
 │   │   ├── 5_🎚️_Threshold_und_Kosten.py
-│   │   └── 6_🔬_Case_Explorer.py
+│   │   ├── 6_🔬_Case_Explorer.py
+│   │   └── 7_🤖_LLM_vs_ML.py
 │   └── .streamlit/config.toml # Dunkles Theme
 └── data/processed/            # Output der Pipeline (wird erzeugt)
 ```

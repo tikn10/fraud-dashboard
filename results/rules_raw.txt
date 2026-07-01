@@ -1,0 +1,52 @@
+# Unterscheidende Indikatoren für Kreditkartenbetrug
+
+Basierend auf der Analyse der Trainingsdaten:
+
+1. **Transaktionsbetrag > $500**
+   - Betrugsfälle zeigen deutlich höhere Beträge (Durchschnitt ~$600 vs. ~$60 bei legitimen Transaktionen)
+   - Schwellenwert: Beträge über $500 sind verdächtig
+
+2. **Nächtliche Transaktionen (22:00–04:00 Uhr)**
+   - Betrug konzentriert sich auf späte Abendstunden und Nacht
+   - Legitime Transaktionen erfolgen häufiger tagsüber
+   - Schwellenwert: Transaktionen zwischen 22:00–04:00 Uhr erhöhen Risiko
+
+3. **Große geografische Distanz (>100 km)**
+   - Berechnet aus Karteninhaber-Koordinaten vs. Händler-Koordinaten
+   - Betrüger nutzen oft Karten in anderen Bundesstaaten
+   - Schwellenwert: Distanz > 100 km ist verdächtig
+
+4. **Online-Shopping-Kategorien (shopping_net, misc_net)**
+   - Betrug konzentriert sich auf Online-Transaktionen
+   - Schwellenwert: shopping_net und misc_net sind überrepräsentiert bei Betrug
+
+5. **Ungewöhnliche Kategorien-Zeit-Kombinationen**
+   - z.B. grocery_pos oder gas_transport um 02:00–04:00 Uhr
+   - Legitime Einkäufe finden zu normalen Öffnungszeiten statt
+
+6. **Sehr kleine Beträge (<$10) bei Online-Transaktionen**
+   - Können auf Kartentests hindeuten (Validierungstransaktionen)
+   - Schwellenwert: shopping_net/misc_net unter $10
+
+7. **Mehrfache Transaktionen desselben Händlers in kurzer Zeit**
+   - Nicht in den Rohdaten direkt erkennbar, aber Muster bei Betrugsmerchandisern
+   - Deutet auf Kartenmissbrauch hin
+
+8. **Alter des Karteninhabers (sehr jung <20 oder sehr alt >80)**
+   - Junge und ältere Personen sind überrepräsentiert bei Betrug
+   - Schwellenwert: Alter < 20 oder > 75 Jahre
+
+9. **Kleine Städte mit großer Distanz zum Händler**
+   - Karteninhaber in Kleinstädten (city_pop < 10.000) mit Transaktionen weit entfernt
+   - Schwellenwert: city_pop < 10.000 + Distanz > 150 km
+
+10. **Kombination: Hoher Betrag + Online + Nacht**
+    - Alle drei Faktoren zusammen sind stark verdächtig
+    - Schwellenwert: amt > $300 + shopping_net/misc_net + 22:00–04:00 Uhr
+
+---
+
+**Wichtigste Erkenntnisse:**
+- **Betrag** und **Tageszeit** sind die stärksten Einzelindikatoren
+- **Geografische Distanz** ist ein zuverlässiger Indikator
+- **Kombinationen** mehrerer Faktoren sind aussagekräftiger als Einzelfaktoren

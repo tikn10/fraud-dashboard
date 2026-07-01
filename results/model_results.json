@@ -1,113 +1,113 @@
 {
-  "test_size": 173579,
-  "source": "model_comparison_log.txt (gemeinsamer Lauf) + model_log.txt (RF-Threshold-Kurve)",
-  "split_note": "Zuf\u00e4lliger stratifizierter Split (random_state=42). Kein zeitbasierter Split; Threshold auf dem Testset optimiert. Metriken daher eher Obergrenze.",
-  "n_fraud_test": 948,
+  "test_size": 10000,
+  "n_fraud_test": 55,
+  "source": "ml_results.txt (finaler Lauf, geteiltes 10k-EVAL-Set) \u2014 Threshold auf separatem Validierungs-Split getunt.",
+  "split_note": "Vereinheitlichte Pipeline (data_preparation.py): Feature Engineering auf allen 17 Mio. Zeilen, dann disjunkte stratifizierte Train/Eval-Samples. Threshold auf Validierung gew\u00e4hlt (nicht auf Test). EVAL hat nat\u00fcrliche Fraud-Rate ~0,55 %.",
   "models": {
-    "Random Forest": {
-      "threshold": 0.25,
-      "precision": 0.8451,
-      "recall": 0.7827,
-      "f1": 0.8127,
+    "LightGBM": {
+      "threshold": 0.65,
+      "precision": 0.8298,
+      "recall": 0.7091,
+      "f1": 0.7647,
       "cm": [
         [
-          172495,
-          136
+          9937,
+          8
         ],
         [
-          206,
-          742
+          16,
+          39
         ]
       ],
       "importances": {
-        "amt": 0.4068,
-        "amt_ratio_7d": 0.18,
-        "hour": 0.1612,
-        "velocity_1h": 0.0366,
-        "age": 0.0319,
-        "merch_long": 0.0212,
-        "city_pop_x": 0.0212,
-        "dist_km": 0.021,
-        "merch_lat": 0.0209,
-        "category_grocery_pos": 0.0177
+        "amt": 2582,
+        "amt_ratio_7d": 2523,
+        "age": 2259,
+        "city_pop_x": 2224,
+        "dist_km": 2216,
+        "merch_long": 2131,
+        "merch_lat": 2085,
+        "hour": 1628,
+        "day_of_week": 870,
+        "velocity_1h": 514
       }
     },
     "XGBoost": {
-      "threshold": 0.9,
-      "precision": 0.7436,
-      "recall": 0.8291,
-      "f1": 0.784,
+      "threshold": 0.65,
+      "precision": 0.7843,
+      "recall": 0.7273,
+      "f1": 0.7547,
       "cm": [
         [
-          172360,
-          271
+          9934,
+          11
         ],
         [
-          162,
-          786
+          15,
+          40
         ]
       ],
       "importances": {
-        "amt": 0.3963,
-        "amt_ratio_7d": 0.102,
-        "hour": 0.0818,
-        "category_gas_transport": 0.0648,
-        "category_grocery_pos": 0.0537,
-        "category_grocery_net": 0.0304,
-        "category_misc_net": 0.028,
-        "category_food_dining": 0.0245,
-        "velocity_1h": 0.0201,
-        "category_shopping_pos": 0.0184
+        "amt": 0.2969,
+        "hour": 0.0913,
+        "amt_ratio_7d": 0.0869,
+        "category_health_fitness": 0.0782,
+        "category_kids_pets": 0.0419,
+        "category_gas_transport": 0.0391,
+        "velocity_1h": 0.0345,
+        "category_home": 0.0332,
+        "category_personal_care": 0.0291,
+        "category_food_dining": 0.0286
       }
     },
-    "LightGBM": {
-      "threshold": 0.9,
-      "precision": 0.5649,
-      "recall": 0.9093,
-      "f1": 0.6968,
+    "Random Forest": {
+      "threshold": 0.35,
+      "precision": 0.8421,
+      "recall": 0.5818,
+      "f1": 0.6882,
       "cm": [
         [
-          171967,
-          664
+          9939,
+          6
         ],
         [
-          86,
-          862
+          23,
+          32
         ]
       ],
       "importances": {
-        "amt": 705,
-        "amt_ratio_7d": 483,
-        "hour": 442,
-        "age": 250,
-        "city_pop_x": 130,
-        "dist_km": 126,
-        "merch_lat": 109,
-        "velocity_1h": 92,
-        "merch_long": 81,
-        "gender_M": 77
+        "amt": 0.4107,
+        "amt_ratio_7d": 0.1762,
+        "hour": 0.1448,
+        "velocity_1h": 0.0389,
+        "age": 0.0339,
+        "dist_km": 0.0257,
+        "merch_long": 0.0252,
+        "city_pop_x": 0.0252,
+        "merch_lat": 0.0252,
+        "day_of_week": 0.0142
       }
     },
     "Logistic Regression": {
       "threshold": 0.9,
-      "precision": 0.2771,
-      "recall": 0.5559,
-      "f1": 0.3698,
+      "precision": 0.2887,
+      "recall": 0.5091,
+      "f1": 0.3684,
       "cm": [
         [
-          171256,
-          1375
+          9876,
+          69
         ],
         [
-          421,
-          527
+          27,
+          28
         ]
       ],
       "importances": null
     }
   },
   "error_profile": {
-    "note": "Mittelwerte je Gruppe aus der RF-Diagnose (model_log.txt).",
+    "note": "Illustrative Mittelwerte je Gruppe aus einem Random-Forest-Lauf (fr\u00fchere Diagnose).",
     "features": [
       "amt",
       "dist_km",

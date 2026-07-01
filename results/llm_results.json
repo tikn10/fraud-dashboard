@@ -1,0 +1,122 @@
+{
+  "model": "Claude Haiku 4.5",
+  "test_size": 7000,
+  "n_fraud_test": 38,
+  "note": "3 Methoden \u00d7 2 Datensichten. confidence/rules: Score 0\u2013100, Threshold auf Validierung getunt. hardlabel: direktes 0/1-Urteil. Berichtet auf 7.000 Test-Zeilen (Teilmenge des 10k-EVAL-Sets).",
+  "runs": [
+    {
+      "method": "rules",
+      "view": "raw",
+      "precision": 0.4043,
+      "recall": 0.5,
+      "f1": 0.4471,
+      "threshold": 79,
+      "cm": [
+        [
+          6934,
+          28
+        ],
+        [
+          19,
+          19
+        ]
+      ],
+      "runtime_s": 501
+    },
+    {
+      "method": "rules",
+      "view": "engineered",
+      "precision": 0.15,
+      "recall": 0.2368,
+      "f1": 0.1837,
+      "threshold": 79,
+      "cm": [
+        [
+          6911,
+          51
+        ],
+        [
+          29,
+          9
+        ]
+      ],
+      "runtime_s": 2192
+    },
+    {
+      "method": "confidence",
+      "view": "engineered",
+      "precision": 0.0521,
+      "recall": 0.4211,
+      "f1": 0.0928,
+      "threshold": 43,
+      "cm": [
+        [
+          6671,
+          291
+        ],
+        [
+          22,
+          16
+        ]
+      ],
+      "runtime_s": 451
+    },
+    {
+      "method": "confidence",
+      "view": "raw",
+      "precision": 0.0087,
+      "recall": 0.3684,
+      "f1": 0.0171,
+      "threshold": 79,
+      "cm": [
+        [
+          5374,
+          1588
+        ],
+        [
+          24,
+          14
+        ]
+      ],
+      "runtime_s": 515
+    },
+    {
+      "method": "hardlabel",
+      "view": "engineered",
+      "precision": 0.0397,
+      "recall": 0.5,
+      "f1": 0.0735,
+      "threshold": null,
+      "cm": [
+        [
+          6502,
+          460
+        ],
+        [
+          19,
+          19
+        ]
+      ],
+      "runtime_s": 424
+    },
+    {
+      "method": "hardlabel",
+      "view": "raw",
+      "precision": 0.0055,
+      "recall": 1.0,
+      "f1": 0.0109,
+      "threshold": null,
+      "cm": [
+        [
+          51,
+          6911
+        ],
+        [
+          0,
+          38
+        ]
+      ],
+      "runtime_s": 226
+    }
+  ]
+}

@@ -53,5 +53,6 @@ wurden dabei entfernt bzw. maskiert.
 4. **Modellvergleich** – vier Modelle, die richtigen Metriken für seltene Ereignisse
 5. **Threshold & Kosten** – der Schwellwert als Abwägung zwischen Treffern und Fehlalarmen
 6. **Case Explorer** – einzelne Transaktionen und Modellfehler im Detail
+7. **LLM vs. ML** – kann ein Sprachmodell mit den trainierten Modellen mithalten?
 """
     )

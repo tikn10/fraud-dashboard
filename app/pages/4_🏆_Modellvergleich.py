@@ -64,13 +64,18 @@ st.dataframe(
 st.markdown(
     f"""
 **Wie man das liest:**
-- **{best}** gewinnt beim **F1** (beste Balance aus Präzision und Trefferquote).
-- **LightGBM** hat den höchsten **Recall** ({models['LightGBM']['recall']:.0%}) – fängt
-  am meisten Betrug, produziert aber mit {models['LightGBM']['cm'][0][1]} die meisten
-  **Fehlalarme**. Gut, wenn „keinen Fall verpassen“ wichtiger ist als Kundenkomfort.
-- **Logistische Regression** fällt klar ab – ihr Schwellwert musste auf 0,90 hoch,
-  und selbst dort bleibt die Precision niedrig. Ein lineares Modell reicht für diese
-  Muster nicht (zusätzlich war es mit `C=0.001` stark regularisiert).
+- **{best}** gewinnt beim **F1** – die beste Balance aus Präzision und Trefferquote.
+- **XGBoost** liegt fast gleichauf und hat den höchsten **Recall**
+  ({models['XGBoost']['recall']:.0%}), fängt also die meisten Betrugsfälle.
+- **Random Forest** ist am **präzisesten** ({models['Random Forest']['precision']:.0%} –
+  kaum Fehlalarme), übersieht dafür aber mehr Betrug (Recall nur
+  {models['Random Forest']['recall']:.0%}).
+- **Logistische Regression** fällt klar ab: Selbst mit hohem Schwellwert bleibt die
+  Precision niedrig. Ein lineares Modell reicht für diese Muster nicht.
+
+Die Gradient-Boosting-Verfahren (LightGBM, XGBoost) setzen sich also durch – sie
+modellieren die nichtlinearen Wechselwirkungen (hoher Betrag *und* nachts *und*
+Ausreißer vom Kartennormal) am besten.
 """
 )
 

@@ -70,6 +70,17 @@ def load_threshold_curve() -> pd.DataFrame:
     return pd.read_csv(cfg.RF_THRESHOLD_CURVE_PATH)
 
 
+@st.cache_data(show_spinner=False)
+def load_llm_results() -> dict:
+    return json.loads(cfg.LLM_RESULTS_PATH.read_text())
+
+
+@st.cache_data(show_spinner=False)
+def load_rules(view: str) -> str:
+    path = cfg.RULES_RAW_PATH if view == "raw" else cfg.RULES_ENGINEERED_PATH
+    return path.read_text(encoding="utf-8")
+
+
 def case_explorer_available() -> bool:
     return cfg.CASE_EXPLORER_PATH.exists()
 
