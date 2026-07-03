@@ -1,4 +1,4 @@
-"""Seite 6: Case Explorer — einzelne Transaktionen und Modellfehler verstehen."""
+"""Seite 6: Case Explorer. Einzelne Transaktionen und Modellfehler betrachten."""
 import sys
 from pathlib import Path
 
@@ -17,15 +17,16 @@ st.title("🔬 Case Explorer")
 
 st.markdown(
     """
-Aggregierte Metriken zeigen, *wie gut* ein Modell ist – aber nicht, *wo* es
-scheitert. Hier schauen wir einzelne Transaktionen an: Was hat das Modell
-vorhergesagt, was war es wirklich, und **warum geht es manchmal daneben?**
+Aggregierte Metriken zeigen, wie gut ein Modell insgesamt ist, aber nicht, an
+welchen Stellen es scheitert. Auf dieser Seite lassen sich einzelne Transaktionen
+betrachten: die Vorhersage des Modells, das tatsächliche Label und die Frage, wo
+und warum das Modell danebenliegt.
 """
 )
 
 if not u.case_explorer_available():
     st.warning(
-        "**Fallbeispiele noch nicht erzeugt.**\n\n"
+        "Fallbeispiele noch nicht erzeugt.\n\n"
         "Einmalig lokal ausführen (greift auf das Modeling-Parquet zu):\n\n"
         "```\npip install scikit-learn\npython scripts/02_train_and_predict.py\n```\n\n"
         "Das Skript trainiert den Random Forest nach, berechnet die Wahrscheinlichkeit "
@@ -45,7 +46,7 @@ df["Ergebnis"] = np.select(
 )
 
 # --- Fehlertypen-Übersicht ------------------------------------------------
-st.subheader("Wo liegt das Modell richtig – und wo nicht?")
+st.subheader("Verteilung der Ergebnistypen")
 counts = df["Ergebnis"].value_counts()
 cols = st.columns(4)
 for col, key, color in zip(
@@ -56,23 +57,23 @@ for col, key, color in zip(
     col.metric(key, u.fmt_int(counts.get(key, 0)))
 
 st.caption(
-    f"Arbeitspunkt: Schwellwert {THR:.2f} (RF). Stichprobe des Testsets — alle "
-    "Fraud-Fälle plus eine Auswahl legitimer Transaktionen."
+    f"Arbeitspunkt: Schwellwert {THR:.2f} (Random Forest). Stichprobe des Testsets, "
+    "bestehend aus allen Betrugsfällen und einer Auswahl legitimer Transaktionen."
 )
 
 # --- Betrag vs. Wahrscheinlichkeit ----------------------------------------
-st.subheader("Der teure blinde Fleck: kleine Frauds")
+st.subheader("Betrag und Vorhersagewahrscheinlichkeit")
 st.markdown(
-    "Jeder Punkt ist eine Fraud-Transaktion. Links die **übersehenen**, rechts die "
-    "**erkannten**. Das Muster aus den Logs wird hier sichtbar: Das Modell findet "
-    "die **großen** Beträge zuverlässig und lässt eher **kleine** durchrutschen."
+    "Jeder Punkt ist eine Betrugstransaktion, unterteilt in übersehene und erkannte "
+    "Fälle. Es zeigt sich das Muster aus den Logs: Das Modell erkennt hohe Beträge "
+    "zuverlässig, während kleinere Beträge eher durchrutschen."
 )
 fraud_only = df[df.y_true == 1].copy()
 fig = px.scatter(
     fraud_only, x="amt", y="y_pred_proba",
     color=fraud_only["pred"].map({1: "erkannt", 0: "übersehen"}),
     color_discrete_map={"erkannt": COLOR_FRAUD, "übersehen": COLOR_ACCENT},
-    labels={"amt": "Betrag ($)", "y_pred_proba": "Fraud-Wahrscheinlichkeit", "color": ""},
+    labels={"amt": "Betrag ($)", "y_pred_proba": "Betrugswahrscheinlichkeit", "color": ""},
     hover_data=["category", "hour"] if "category" in df.columns else None,
 )
 fig.add_hline(y=THR, line_dash="dash", line_color="#8899AA",
@@ -83,11 +84,11 @@ st.plotly_chart(fig, width="stretch")
 # --- Interaktiver Drill-down ----------------------------------------------
 st.subheader("Einzelfälle durchsehen")
 focus = st.radio(
-    "Welche Fälle interessieren?",
-    ["Übersehen (FN)", "Fehlalarm (FP)", "Erkannt (TP)", "Alle Fraud-Fälle"],
+    "Fallauswahl",
+    ["Übersehen (FN)", "Fehlalarm (FP)", "Erkannt (TP)", "Alle Betrugsfälle"],
     horizontal=True,
 )
-if focus == "Alle Fraud-Fälle":
+if focus == "Alle Betrugsfälle":
     view = df[df.y_true == 1]
 else:
     view = df[df["Ergebnis"] == focus]
@@ -99,18 +100,18 @@ st.dataframe(
     view[display_cols].head(50), hide_index=True, width="stretch",
     column_config={
         "amt": st.column_config.NumberColumn("Betrag ($)", format="%.2f"),
-        "category": "Kategorie", "hour": "Stunde",
+        "category": "Händlerkategorie", "hour": "Stunde",
         "amt_ratio_7d": st.column_config.NumberColumn("Betrag/7T-Mittel", format="%.1f"),
         "velocity_1h": st.column_config.NumberColumn("Txn/h", format="%.0f"),
         "dist_km": st.column_config.NumberColumn("Distanz (km)", format="%.0f"),
         "age": "Alter",
         "y_pred_proba": st.column_config.ProgressColumn(
-            "Fraud-Wahrsch.", format="%.2f", min_value=0, max_value=1),
+            "Betrugswahrsch.", format="%.2f", min_value=0, max_value=1),
     },
 )
 
 st.info(
-    "💡 **Für die Präsentation:** Greift hier gezielt einen *übersehenen* (FN) und "
-    "einen *Fehlalarm* (FP) heraus und diskutiert, warum das Modell dort danebenliegt. "
-    "Fehleranalyse zu zeigen wirkt souveräner als nur Erfolge."
+    "An den übersehenen Fällen (FN) und den Fehlalarmen (FP) lässt sich nachvollziehen, "
+    "unter welchen Bedingungen das Modell falsch entscheidet, etwa bei kleinen Beträgen "
+    "oder unauffälligen Transaktionsmerkmalen."
 )

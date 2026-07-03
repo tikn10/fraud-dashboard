@@ -32,7 +32,7 @@ _template = go.layout.Template(
 pio.templates["fraud_dark"] = _template
 pio.templates.default = "fraud_dark"
 
-FRAUD_COLOR_MAP = {"Fraud": cfg.COLOR_FRAUD, "legitim": cfg.COLOR_LEGIT}
+FRAUD_COLOR_MAP = {"Betrug": cfg.COLOR_FRAUD, "legitim": cfg.COLOR_LEGIT}
 
 
 # ---------------------------------------------------------------------------
@@ -56,7 +56,7 @@ def load_agg(name: str) -> pd.DataFrame:
 @st.cache_data(show_spinner="Lade Plot-Sample …")
 def load_plot_sample() -> pd.DataFrame:
     df = pd.read_parquet(cfg.PLOT_SAMPLE_PATH)
-    df["Klasse"] = df["is_fraud"].map({0: "legitim", 1: "Fraud"})
+    df["Klasse"] = df["is_fraud"].map({0: "legitim", 1: "Betrug"})
     return df
 
 
@@ -88,7 +88,7 @@ def case_explorer_available() -> bool:
 @st.cache_data(show_spinner="Lade Fallbeispiele …")
 def load_case_explorer() -> pd.DataFrame:
     df = pd.read_parquet(cfg.CASE_EXPLORER_PATH)
-    df["Klasse"] = df["y_true"].map({0: "legitim", 1: "Fraud"})
+    df["Klasse"] = df["y_true"].map({0: "legitim", 1: "Betrug"})
     return df
 
 
@@ -106,7 +106,7 @@ def fmt_pct(x: float, digits: int = 2) -> str:
 
 def page_setup(title: str, icon: str = "🛡️") -> None:
     """Einheitlicher Seitenkopf für alle App-Seiten."""
-    st.set_page_config(page_title=f"{title} · Fraud Detection", page_icon=icon, layout="wide")
+    st.set_page_config(page_title=f"{title} · Betrugserkennung", page_icon=icon, layout="wide")
 
 
 def require_processed_data() -> bool:

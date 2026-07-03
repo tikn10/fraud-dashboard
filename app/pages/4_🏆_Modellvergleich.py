@@ -1,4 +1,4 @@
-"""Seite 4: Modellvergleich — vier Modelle, die richtigen Metriken."""
+"""Seite 4: Modellvergleich. Vier Modelle und passende Metriken."""
 import sys
 from pathlib import Path
 
@@ -21,10 +21,11 @@ models = res["models"]
 st.markdown(
     f"""
 Vier Modelle wurden auf denselben {u.fmt_int(res['test_size'])} Test-Transaktionen
-verglichen. **Accuracy spielt hier keine Rolle:** Bei
-{u.fmt_pct(__import__('config').CANONICAL_FRAUD_RATE)} Fraud erreicht schon ein
-Modell, das *immer* „kein Betrug“ sagt, über 99 % Accuracy – und findet keinen
-einzigen Betrugsfall. Was zählt, sind **Precision und Recall der Fraud-Klasse**.
+verglichen. Accuracy ist hier wenig aussagekräftig. Bei einer Betrugsrate von
+{u.fmt_pct(__import__('config').CANONICAL_FRAUD_RATE)} erreicht bereits ein Modell,
+das jede Transaktion als legitim einstuft, über 99 % Accuracy, ohne einen
+einzigen Betrugsfall zu erkennen. Aussagekräftig sind Precision und Recall der
+Betrugsklasse.
 """
 )
 
@@ -40,7 +41,7 @@ for name, m in models.items():
 tbl = pd.DataFrame(rows).sort_values("F1", ascending=False)
 best = tbl.iloc[0]["Modell"]
 
-st.subheader("Kennzahlen der Fraud-Klasse")
+st.subheader("Kennzahlen der Betrugsklasse")
 melt = tbl.melt(id_vars="Modell", value_vars=["Precision", "Recall", "F1"],
                 var_name="Metrik", value_name="Wert")
 fig = px.bar(
@@ -63,19 +64,19 @@ st.dataframe(
 
 st.markdown(
     f"""
-**Wie man das liest:**
-- **{best}** gewinnt beim **F1** – die beste Balance aus Präzision und Trefferquote.
-- **XGBoost** liegt fast gleichauf und hat den höchsten **Recall**
-  ({models['XGBoost']['recall']:.0%}), fängt also die meisten Betrugsfälle.
-- **Random Forest** ist am **präzisesten** ({models['Random Forest']['precision']:.0%} –
-  kaum Fehlalarme), übersieht dafür aber mehr Betrug (Recall nur
+Einordnung der Ergebnisse:
+- {best} erreicht den höchsten F1-Wert und damit die beste Balance aus Precision und Recall.
+- XGBoost liegt nahezu gleichauf und hat den höchsten Recall
+  ({models['XGBoost']['recall']:.0%}), erkennt also die meisten Betrugsfälle.
+- Random Forest hat die höchste Precision ({models['Random Forest']['precision']:.0%},
+  also wenige Fehlalarme), übersieht dafür mehr Betrug (Recall
   {models['Random Forest']['recall']:.0%}).
-- **Logistische Regression** fällt klar ab: Selbst mit hohem Schwellwert bleibt die
-  Precision niedrig. Ein lineares Modell reicht für diese Muster nicht.
+- Die logistische Regression fällt deutlich ab. Auch mit hohem Schwellwert bleibt die
+  Precision niedrig. Ein lineares Modell reicht für diese Muster nicht aus.
 
-Die Gradient-Boosting-Verfahren (LightGBM, XGBoost) setzen sich also durch – sie
-modellieren die nichtlinearen Wechselwirkungen (hoher Betrag *und* nachts *und*
-Ausreißer vom Kartennormal) am besten.
+Die Gradient-Boosting-Verfahren (LightGBM, XGBoost) setzen sich durch, weil sie die
+nichtlinearen Wechselwirkungen zwischen den Merkmalen (etwa hoher Betrag, späte
+Uhrzeit und Abweichung vom kartenüblichen Betrag) am besten abbilden.
 """
 )
 
@@ -84,7 +85,7 @@ st.subheader("Konfusionsmatrizen")
 sel = st.selectbox("Modell auswählen", tbl["Modell"].tolist())
 cm = np.array(models[sel]["cm"])
 
-labels = ["legitim", "Fraud"]
+labels = ["legitim", "Betrug"]
 z_text = [[f"{v:,}".replace(",", ".") for v in row] for row in cm]
 fig = go.Figure(go.Heatmap(
     z=cm, x=[f"vorhergesagt: {l}" for l in labels], y=[f"tatsächlich: {l}" for l in labels],
@@ -98,12 +99,12 @@ st.plotly_chart(fig, width="stretch")
 tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
 c1, c2, c3 = st.columns(3)
 c1.metric("Erkannt (TP)", u.fmt_int(tp), help="Betrug korrekt gefunden")
-c2.metric("Übersehen (FN)", u.fmt_int(fn), help="Betrug durchgelassen – der teure Fehler")
+c2.metric("Übersehen (FN)", u.fmt_int(fn), help="Betrug durchgelassen (der teure Fehler)")
 c3.metric("Fehlalarme (FP)", u.fmt_int(fp), help="Legitime Transaktion fälschlich blockiert")
 
 st.divider()
 st.caption(
-    "Hinweis zur Methodik: zufälliger (nicht zeitbasierter) Train/Test-Split und "
-    "Threshold-Optimierung auf dem Testset. Die Werte sind daher als **Obergrenze** "
-    "zu lesen – ein zeitbasierter Split wäre näher am Realeinsatz."
+    "Hinweis zur Methodik: Der Threshold wurde auf einem separaten Validierungs-Split "
+    "gewählt, nicht auf dem Testset. Der Train/Test-Split erfolgte zufällig und nicht "
+    "zeitbasiert. Ein zeitbasierter Split wäre näher am realen Einsatz."
 )

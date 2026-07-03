@@ -1,4 +1,4 @@
-"""Seite 1: Der Datensatz — Struktur, Segmente, maskierte Beispieldaten."""
+"""Seite 1: Der Datensatz. Struktur, Segmente, maskierte Beispieldaten."""
 import sys
 from pathlib import Path
 
@@ -19,20 +19,20 @@ meta = u.load_meta()
 
 st.markdown(
     """
-Der Datensatz wurde mit dem **Sparkov-Generator** erzeugt: synthetische
+Der Datensatz wurde mit dem Sparkov-Generator erzeugt: synthetische
 Kreditkartentransaktionen, deren Kundenpopulation auf realer US-Demografie
-basiert. Jede Transaktion trägt ein Label `is_fraud` — wir wissen also für
-jede Zeile, ob sie betrügerisch war. Das macht den Datensatz ideal zum
-**Trainieren und Bewerten** von Fraud-Detection-Modellen.
+basiert. Jede Transaktion trägt ein Label `is_fraud`. Für jede Zeile ist damit
+bekannt, ob sie betrügerisch war. Dadurch eignet sich der Datensatz zum
+Trainieren und Bewerten von Modellen zur Betrugserkennung.
 """
 )
 
 # --- Kundensegmente -------------------------------------------------------
 st.subheader("Kundensegmente")
 st.markdown(
-    "Sparkov erzeugt Kunden nach **Profilen** (Altersgruppe × Geschlecht × "
-    "Wohngegend) und simuliert je Profil unterschiedliches Kaufverhalten. "
-    "So verteilen sich die Transaktionen auf die Segmente:"
+    "Sparkov erzeugt Kunden nach Profilen (Kombination aus Altersgruppe, "
+    "Geschlecht und Wohngegend) und simuliert je Profil unterschiedliches "
+    "Kaufverhalten. So verteilen sich die Transaktionen auf die Segmente:"
 )
 
 seg = u.load_agg("by_segment")
@@ -55,8 +55,8 @@ st.plotly_chart(fig, width="stretch")
 st.subheader("Blick in die Daten (maskiert)")
 st.markdown(
     "Felder wie Name, Adresse, SSN und Kartennummer wurden in der Aufbereitung "
-    "entfernt; Karten sind nur noch als anonyme ID + letzte vier Ziffern sichtbar "
-    "(*Privacy by Design* — auch wenn alle Daten synthetisch sind)."
+    "entfernt. Karten sind nur noch als anonyme ID mit den letzten vier Ziffern "
+    "sichtbar (Privacy by Design, auch wenn alle Daten synthetisch sind)."
 )
 
 sample = u.load_plot_sample()
@@ -72,19 +72,19 @@ st.dataframe(
     column_config={
         "card_label": "Karte",
         "ts": st.column_config.DatetimeColumn("Zeitpunkt", format="DD.MM.YYYY HH:mm"),
-        "category": "Kategorie",
+        "category": "Händlerkategorie",
         "merchant": "Händler",
         "amt": st.column_config.NumberColumn("Betrag ($)", format="%.2f"),
         "age_group": "Alter",
         "area": "Gegend",
         "state": "Staat",
         "distance_km": st.column_config.NumberColumn("Distanz (km)", format="%.0f"),
-        "is_fraud": "Fraud",
+        "is_fraud": "Betrug",
     },
 )
 
 st.info(
-    "ℹ️ **Hinweis zur Vorschau:** Die Tabelle stammt aus einem stratifizierten "
-    "Plot-Sample, in dem Fraud-Fälle überrepräsentiert sind — die echte "
-    f"Fraud-Rate liegt bei **{u.fmt_pct(meta['fraud_rate'])}**."
+    "Hinweis zur Vorschau: Die Tabelle stammt aus einem stratifizierten "
+    "Plot-Sample, in dem Betrugsfälle überrepräsentiert sind. Die tatsächliche "
+    f"Betrugsrate liegt bei {u.fmt_pct(meta['fraud_rate'])}."
 )

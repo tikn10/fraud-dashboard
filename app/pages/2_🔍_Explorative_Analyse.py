@@ -1,4 +1,4 @@
-"""Seite 2: Explorative Analyse — Wo versteckt sich Fraud?"""
+"""Seite 2: Explorative Datenanalyse."""
 import sys
 from pathlib import Path
 
@@ -12,7 +12,7 @@ import utils as u  # noqa: E402
 from config import COLOR_FRAUD, COLOR_LEGIT, WEEKDAYS_DE  # noqa: E402
 
 u.page_setup("Explorative Analyse", "🔍")
-st.title("🔍 Wo versteckt sich Fraud?")
+st.title("🔍 Explorative Datenanalyse")
 
 if not u.require_processed_data():
     st.stop()
@@ -22,16 +22,16 @@ base_rate = meta["fraud_rate"]
 
 st.markdown(
     f"""
-Die Grundrate liegt bei **{u.fmt_pct(base_rate)}** — Fraud ist also extrem selten.
-Aber er ist **nicht gleichverteilt**: Bestimmte Uhrzeiten, Beträge und Kategorien
-sind deutlich auffälliger. Genau diese Muster muss ein Modell später lernen.
+Die Grundrate liegt bei {u.fmt_pct(base_rate)}. Betrug ist damit selten, aber
+nicht gleichverteilt. Bestimmte Uhrzeiten, Beträge und Händlerkategorien sind
+deutlich auffälliger. Diese Muster sind die Grundlage für die spätere Modellierung.
 """
 )
 
 # ===========================================================================
 # 1) Fraud-Rate nach Uhrzeit
 # ===========================================================================
-st.subheader("⏰ Tageszeit: Fraud schlägt nachts zu")
+st.subheader("Betrugsrate nach Tageszeit")
 
 by_hour = u.load_agg("by_hour").sort_values("hour")
 fig = go.Figure()
@@ -52,21 +52,21 @@ fig.add_hline(
 )
 fig.update_layout(
     xaxis_title="Stunde des Tages",
-    yaxis_title="Fraud-Rate (%)",
+    yaxis_title="Betrugsrate (%)",
     height=380,
     xaxis=dict(dtick=2),
 )
 st.plotly_chart(fig, width="stretch")
 st.caption(
-    "Rot markiert: Stunden mit mehr als doppelter Durchschnittsrate. "
-    "Der Generator modelliert hier ein reales Muster: Betrüger agieren bevorzugt "
-    "nachts, wenn Karteninhaber schlafen und Auffälligkeiten später bemerkt werden."
+    "Rot markiert sind Stunden mit mehr als doppelter Durchschnittsrate. "
+    "Der Generator bildet hier ein reales Muster ab: Betrug tritt bevorzugt "
+    "nachts auf, wenn Karteninhaber schlafen und Auffälligkeiten später bemerkt werden."
 )
 
 # ===========================================================================
 # 2) Betrag
 # ===========================================================================
-st.subheader("💰 Betrag: Fraud ist teurer")
+st.subheader("Betragsverteilung")
 
 sample = u.load_plot_sample()
 log_amt = sample.assign(log_amt=np.log10(sample["amt"].clip(lower=0.01)))
@@ -86,14 +86,15 @@ fig.update_xaxes(tickvals=tick_vals, ticktext=[f"{10**v:,.0f}" for v in tick_val
 fig.update_layout(yaxis_title="Anteil je Klasse (%)", height=380)
 st.plotly_chart(fig, width="stretch")
 st.caption(
-    "Verteilungen normiert je Klasse (Fraud wäre absolut sonst unsichtbar). "
-    "Datenbasis: stratifiziertes Sample. Log-Skala, da Beträge stark rechtsschief sind."
+    "Die Verteilungen sind je Klasse normiert, da Betrug in absoluten Zahlen sonst "
+    "nicht sichtbar wäre. Datenbasis ist ein stratifiziertes Sample. Die logarithmische "
+    "Skala ist gewählt, weil die Beträge stark rechtsschief verteilt sind."
 )
 
 # ===========================================================================
 # 3) Kategorie
 # ===========================================================================
-st.subheader("🛒 Kategorie: Online-Shopping ist das Einfallstor")
+st.subheader("Betrugsrate nach Händlerkategorie")
 
 by_cat = u.load_agg("by_category").sort_values("fraud_rate", ascending=True)
 fig = px.bar(
@@ -101,7 +102,7 @@ fig = px.bar(
     x=by_cat["fraud_rate"] * 100,
     y="category",
     orientation="h",
-    labels={"x": "Fraud-Rate (%)", "category": ""},
+    labels={"x": "Betrugsrate (%)", "category": ""},
     color=by_cat["fraud_rate"],
     color_continuous_scale=[COLOR_LEGIT, COLOR_FRAUD],
 )
@@ -112,7 +113,7 @@ st.plotly_chart(fig, width="stretch")
 # ===========================================================================
 # 4) Segmente
 # ===========================================================================
-st.subheader("👥 Segmente: Wer ist am stärksten betroffen?")
+st.subheader("Betrugsrate nach Kundensegment")
 
 seg = u.load_agg("by_segment")
 seg["Gruppe"] = seg["age_group"] + " · " + seg["area"]
@@ -127,7 +128,7 @@ fig = px.imshow(
     piv,
     text_auto=".2f",
     color_continuous_scale=["#1A2332", COLOR_FRAUD],
-    labels=dict(color="Fraud-Rate (%)"),
+    labels=dict(color="Betrugsrate (%)"),
     aspect="auto",
 )
 fig.update_layout(height=380, xaxis_title="", yaxis_title="")
@@ -136,7 +137,7 @@ st.plotly_chart(fig, width="stretch")
 # ===========================================================================
 # 5) Zeitverlauf + Wochentag
 # ===========================================================================
-st.subheader("📅 Verlauf über zwei Jahre")
+st.subheader("Zeitlicher Verlauf")
 
 col1, col2 = st.columns([2, 1])
 with col1:
@@ -150,7 +151,7 @@ with col1:
         hovertemplate="%{x}: %{y:.2f} %<extra></extra>",
     )
     fig.update_layout(
-        xaxis_title="Monat", yaxis_title="Fraud-Rate (%)", height=340
+        xaxis_title="Monat", yaxis_title="Betrugsrate (%)", height=340
     )
     st.plotly_chart(fig, width="stretch")
 with col2:
@@ -163,7 +164,7 @@ with col2:
         by_wd,
         x="weekday",
         y=by_wd["fraud_rate"] * 100,
-        labels={"weekday": "", "y": "Fraud-Rate (%)"},
+        labels={"weekday": "", "y": "Betrugsrate (%)"},
         color_discrete_sequence=[COLOR_LEGIT],
     )
     fig.update_layout(height=340)
@@ -175,16 +176,16 @@ with col2:
 st.divider()
 st.markdown(
     """
-#### ⚠️ Einordnung: synthetische Daten
+#### Einordnung: synthetische Daten
 
-Die Muster oben sind **bewusst vom Generator injiziert** (Nacht-Peak, hohe
-Beträge, Online-Kategorien) und daher *sauberer* als in echten Bankdaten.
-Zwei Konsequenzen für unsere Arbeit:
+Die gezeigten Muster (nächtlicher Anstieg, hohe Beträge, Online-Kategorien)
+werden vom Generator gezielt erzeugt und sind dadurch klarer ausgeprägt als in
+echten Bankdaten. Daraus ergeben sich zwei Konsequenzen für die Modellierung:
 
-- Gute Modellmetriken sind **teilweise ein Artefakt** der klaren Muster —
-  reale Fraud-Detection ist schwerer.
-- Die Distanz Kunde ↔ Händler ist hier **kein** Signal, weil der Generator
-  Händler zufällig um den Kunden platziert — anders als in der Realität.
-  Wer das Feature prüft und verwirft, hat die Daten verstanden.
+- Gute Modellmetriken sind teilweise auf diese klaren Muster zurückzuführen. Die
+  Betrugserkennung auf realen Daten ist schwieriger.
+- Die Distanz zwischen Kunde und Händler ist hier kein informatives Merkmal, weil
+  der Generator Händler zufällig im Umkreis des Kunden platziert. In realen Daten
+  kann die Distanz dagegen aussagekräftig sein.
 """
 )

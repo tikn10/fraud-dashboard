@@ -1,4 +1,4 @@
-"""Seite 7: LLM vs. klassische Modelle — kann ein Sprachmodell Fraud erkennen?"""
+"""Seite 7: LLM vs. klassische Modelle."""
 import sys
 from pathlib import Path
 
@@ -17,16 +17,16 @@ st.title("🤖 LLM vs. klassische Modelle")
 
 st.markdown(
     """
-Als Erweiterung haben wir getestet, ob ein **Sprachmodell (Claude Haiku 4.5)**
-Kreditkartenbetrug erkennen kann – ohne klassisches Training, nur aus den
-Transaktionsmerkmalen im Prompt. Drei Ansätze, jeweils auf **rohen** und auf
-**aufbereiteten** Merkmalen:
+Als Erweiterung wurde getestet, ob ein Sprachmodell (Claude Haiku 4.5)
+Kreditkartenbetrug erkennen kann, ohne klassisches Training und nur anhand der
+Transaktionsmerkmale im Prompt. Untersucht wurden drei Ansätze, jeweils auf
+rohen und auf aufbereiteten Merkmalen:
 
-- **Hardlabel** – das Modell gibt direkt ein Urteil (Betrug: ja/nein).
-- **Confidence** – das Modell gibt einen Score 0–100, Schwellwert wird optimiert.
-- **Rules** – das Modell leitet zuerst aus Beispielen eigene Regeln ab und wendet sie dann an.
+- Hardlabel: Das Modell gibt direkt ein Urteil ab (Betrug: ja/nein).
+- Confidence: Das Modell gibt einen Score von 0 bis 100 aus, der Schwellwert wird optimiert.
+- Rules: Das Modell leitet zunächst aus Beispielen eigene Regeln ab und wendet sie dann an.
 
-Die Frage: Kommt ein LLM an die trainierten Modelle heran?
+Die Leitfrage ist, ob ein LLM an die trainierten Modelle heranreicht.
 """
 )
 
@@ -34,7 +34,7 @@ ml = u.load_model_results()
 llm = u.load_llm_results()
 
 # --- Gemeinsamer F1-Vergleich ---------------------------------------------
-st.subheader("Die Antwort in einem Bild")
+st.subheader("Vergleich der F1-Werte")
 
 rows = []
 for name, m in ml["models"].items():
@@ -48,26 +48,29 @@ df = pd.DataFrame(rows).sort_values("F1", ascending=True)
 fig = px.bar(
     df, x="F1", y="Ansatz", orientation="h", color="Typ",
     color_discrete_map={"Klassisches ML": COLOR_LEGIT, "LLM (Haiku 4.5)": COLOR_ACCENT},
-    labels={"F1": "F1-Score (Fraud-Klasse)"},
+    labels={"F1": "F1-Score (Betrugsklasse)"},
 )
 fig.update_layout(height=460, legend_title="", xaxis_range=[0, 0.85])
 st.plotly_chart(fig, width="stretch")
 
 best_ml = max(ml["models"].items(), key=lambda kv: kv[1]["f1"])
 best_llm = max(llm["runs"], key=lambda r: r["f1"])
-st.error(
-    f"**Die klassischen Modelle gewinnen klar.** Das beste ML-Modell "
-    f"({best_ml[0]}, F1 {best_ml[1]['f1']:.2f}) liegt deutlich über dem besten "
-    f"LLM-Ansatz ({best_llm['method']}/{best_llm['view']}, F1 {best_llm['f1']:.2f}). "
-    "Nur die logistische Regression wird vom besten LLM-Setup geschlagen."
+st.markdown(
+    f"""
+Die klassischen Modelle schneiden deutlich besser ab. Das beste ML-Modell
+({best_ml[0]}, F1 {best_ml[1]['f1']:.2f}) erreicht einen höheren F1-Wert als der
+beste LLM-Ansatz ({best_llm['method']}/{best_llm['view']}, F1 {best_llm['f1']:.2f}).
+Nur die logistische Regression wird vom besten LLM-Ansatz übertroffen.
+"""
 )
 
 # --- Precision/Recall-Landkarte -------------------------------------------
-st.subheader("Warum die LLMs scheitern: die Präzisions-Falle")
+st.subheader("Precision und Recall im Vergleich")
 st.markdown(
-    "Jeder Punkt ist ein Ansatz. **Oben rechts** ist gut (viel Betrug gefunden *und* "
-    "wenige Fehlalarme). Die ML-Modelle sitzen dort. Die LLMs kleben am **linken Rand** – "
-    "sie erkennen zwar teils Betrug, aber um den Preis massenhafter Fehlalarme."
+    "Jeder Punkt steht für einen Ansatz. Oben rechts ist der günstige Bereich (viel "
+    "Betrug erkannt und zugleich wenige Fehlalarme). Dort liegen die klassischen "
+    "Modelle. Die LLM-Ansätze liegen am linken Rand: Sie erkennen teils Betrug, "
+    "erzeugen dabei aber sehr viele Fehlalarme."
 )
 fig = go.Figure()
 for name, m in ml["models"].items():
@@ -87,9 +90,10 @@ fig.update_layout(
 )
 st.plotly_chart(fig, width="stretch")
 st.caption(
-    "Blau = klassisches ML, orange (Raute) = LLM. Das extremste Beispiel: "
-    "der Hardlabel-Ansatz auf Rohdaten erkennt 100 % des Betrugs (rechts unten), "
-    "markiert dafür aber fast **alles** als Betrug – Precision nahe null. Praktisch unbrauchbar."
+    "Blau steht für klassisches ML, orange (Raute) für die LLM-Ansätze. Ein "
+    "auffälliges Beispiel ist der Hardlabel-Ansatz auf Rohdaten: Er erkennt 100 % "
+    "des Betrugs, markiert dafür aber nahezu alle Transaktionen als Betrug, sodass "
+    "die Precision nahe null liegt."
 )
 
 # --- Was hat am besten funktioniert? --------------------------------------
@@ -107,35 +111,35 @@ with c1:
 with c2:
     st.markdown(
         """
-**Muster, die sich zeigen:**
+Beobachtungen:
 
-- **Regeln schlagen alles.** Wenn das LLM erst eigene Indikatoren ableitet und
-  dann danach urteilt, wird es am besten – Struktur hilft.
-- **Ohne Struktur überschätzt es Betrug massiv.** Der direkte Ja/Nein-Ansatz
-  ignoriert die 0,5-%-Grundrate und ruft viel zu oft „Betrug“.
-- **Laufzeit & Kosten:** Die LLM-Läufe dauerten Minuten bis über eine halbe
-  Stunde und kosten API-Gebühren. Die trainierten Modelle liefern dasselbe
-  in **Sekunden**.
+- Der Rules-Ansatz schneidet am besten ab. Wenn das LLM zunächst eigene
+  Indikatoren ableitet und danach urteilt, steigt die Trefferquote.
+- Ohne diese Struktur überschätzt das Modell den Betrugsanteil deutlich. Der
+  direkte Ja/Nein-Ansatz berücksichtigt die Grundrate von etwa 0,5 % kaum und
+  stuft zu viele Transaktionen als Betrug ein.
+- Laufzeit und Kosten: Die LLM-Läufe dauerten Minuten bis über eine halbe Stunde
+  und verursachen API-Kosten. Die trainierten Modelle liefern das Ergebnis in Sekunden.
 """
     )
 
 # --- Die abgeleiteten Regeln + Halluzination ------------------------------
-st.subheader("🔎 Das Aha-Erlebnis: Was das LLM über Betrug „glaubt“")
+st.subheader("Vom Sprachmodell abgeleitete Regeln")
 st.markdown(
     "Beim Rules-Ansatz hat das LLM aus Beispielen selbst Betrugsindikatoren "
-    "formuliert. Die Liste ist lesbar und plausibel – enthält aber einen "
-    "aufschlussreichen **Fehler**:"
+    "formuliert. Die Liste ist lesbar und plausibel, enthält aber einen "
+    "aufschlussreichen Fehler."
 )
 st.info(
-    "Das LLM behauptet in den Rohdaten-Regeln, die **geografische Distanz** "
-    "Kunde↔Händler (> 100 km) sei ein *„zuverlässiger Indikator“* für Betrug. "
-    "Das ist eine Intuition aus der **echten Welt** – in unseren synthetischen "
-    "Daten aber **nachweislich falsch**: Der Generator platziert Händler zufällig "
-    "um den Kunden, und `dist_km` hat in allen trainierten Modellen eine der "
-    "**niedrigsten** Feature-Importances. Das LLM hat also ein Muster halluziniert, "
-    "das die Bäume korrekt als wertlos erkannt haben."
+    "In den Rohdaten-Regeln nennt das LLM die geografische Distanz zwischen Kunde "
+    "und Händler (> 100 km) als zuverlässigen Indikator für Betrug. Das entspricht "
+    "einer Intuition aus realen Daten, ist in diesem synthetischen Datensatz aber "
+    "nicht zutreffend: Der Generator platziert Händler zufällig im Umkreis des "
+    "Kunden, und dist_km hat in allen trainierten Modellen eine der niedrigsten "
+    "Feature-Importances. Das LLM nennt hier also ein Merkmal, das die trainierten "
+    "Modelle korrekt als nicht informativ einstufen."
 )
-with st.expander("📄 Vom LLM abgeleitete Regeln ansehen (Roh- vs. aufbereitete Sicht)"):
+with st.expander("Vom LLM abgeleitete Regeln ansehen (Roh- vs. aufbereitete Sicht)"):
     tab1, tab2 = st.tabs(["Rohdaten-Sicht", "Aufbereitete Sicht"])
     with tab1:
         st.markdown(u.load_rules("raw"))
@@ -148,18 +152,18 @@ st.markdown(
     """
 #### Fazit
 
-Für **hochvolumiges, strukturiertes** Transaktions-Scoring ist ein spezialisiertes
-ML-Modell dem Sprachmodell klar überlegen – schneller, günstiger und deutlich
-treffsicherer. Der Wert des LLM liegt woanders: Es kann in **lesbaren Regeln**
-erklären, *warum* etwas verdächtig wirkt – und macht dabei sogar die menschlichen
-Denkfehler sichtbar (siehe Distanz). Als erklärende Ergänzung interessant, als
-Klassifikator für diese Aufgabe nicht.
+Für hochvolumiges, strukturiertes Transaktions-Scoring ist ein spezialisiertes
+ML-Modell dem Sprachmodell überlegen: schneller, günstiger und treffsicherer. Der
+Nutzen des LLM liegt an anderer Stelle. Es kann in lesbaren Regeln beschreiben,
+warum eine Transaktion verdächtig wirkt, und macht dabei auch typische Fehlannahmen
+sichtbar (siehe Distanz). Als erklärende Ergänzung ist es nützlich, als
+Klassifikator für diese Aufgabe jedoch nicht geeignet.
 """
 )
 
 st.caption(
-    "Methodischer Hinweis: Die LLM-Läufe wurden auf 7.000 Test-Zeilen (38 Fraud) "
-    "ausgewertet, die klassischen Modelle auf dem umgebenden 10.000er-Set (55 Fraud). "
-    "Beide teilen dieselbe Grundrate (~0,55 %); für einen bit-genauen Kopf-an-Kopf-"
-    "Vergleich müssten sie auf identischen Zeilen laufen."
+    "Methodischer Hinweis: Die LLM-Läufe wurden auf 7.000 Test-Zeilen (38 Betrugsfälle) "
+    "ausgewertet, die klassischen Modelle auf dem umgebenden 10.000er-Set (55 Betrugsfälle). "
+    "Beide haben dieselbe Grundrate (etwa 0,55 %). Für einen exakten Kopf-an-Kopf-Vergleich "
+    "müssten sie auf identischen Zeilen ausgewertet werden."
 )

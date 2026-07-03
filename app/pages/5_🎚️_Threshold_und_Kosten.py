@@ -1,4 +1,4 @@
-"""Seite 5: Threshold & Kosten — Fraud Detection als Abwägung, nicht als reine Klassifikation."""
+"""Seite 5: Threshold und Kosten. Betrugserkennung als Abwägung, nicht als reine Klassifikation."""
 import sys
 from pathlib import Path
 
@@ -17,27 +17,27 @@ st.title("🎚️ Schwellwert & Kosten")
 
 st.markdown(
     """
-Ein Modell gibt keine Ja/Nein-Antwort, sondern eine **Wahrscheinlichkeit**. Erst
-der **Schwellwert** entscheidet, ab wann eine Transaktion als Betrug gilt. Diese
-eine Stellschraube verändert alles – und es gibt **kein objektiv richtiges**
-Optimum, sondern nur das, was zu den Kosten von Fehlern passt.
+Ein Modell gibt keine Ja/Nein-Antwort, sondern eine Wahrscheinlichkeit. Erst der
+Schwellwert legt fest, ab wann eine Transaktion als Betrug gilt. Er hat großen
+Einfluss auf das Ergebnis, und es gibt kein objektiv richtiges Optimum, sondern
+nur eines, das zu den Kosten der jeweiligen Fehler passt.
 
-> Illustriert an einem **Random-Forest-Lauf**. Schiebt den Schwellwert und
-> beobachtet, wie sich Treffer, Fehlalarme und Kosten verschieben.
+Der folgende Verlauf ist an einem Random-Forest-Lauf illustriert. Der Schwellwert
+lässt sich verschieben; Treffer, Fehlalarme und Kosten ändern sich entsprechend.
 """
 )
 
 curve = u.load_threshold_curve()
 
 # Illustrativer RF-Lauf mit vollständiger Schwellwert-Kurve (eigene, in sich
-# konsistente Zahlenbasis – unabhängig vom finalen 10k-Vergleichs-Set, für das
+# konsistente Zahlenbasis, unabhaengig vom finalen 10k-Vergleichs-Set, fuer das
 # nur ein einzelner Arbeitspunkt je Modell vorliegt).
 N_FRAUD = 944
 N_LEGIT = 172_635
 
 # --- Slider ---------------------------------------------------------------
 thr = st.select_slider(
-    "Schwellwert (ab welcher Fraud-Wahrscheinlichkeit wird blockiert?)",
+    "Schwellwert (ab welcher Betrugswahrscheinlichkeit wird blockiert?)",
     options=[round(x, 2) for x in curve["threshold"]],
     value=0.25,
 )
@@ -61,8 +61,8 @@ with colA:
     cm = np.array([[tn, fp], [fn, tp]])
     z_text = [[f"{v:,}".replace(",", ".") for v in r] for r in cm]
     fig = go.Figure(go.Heatmap(
-        z=cm, x=["vorhergesagt: legitim", "vorhergesagt: Fraud"],
-        y=["tatsächlich: legitim", "tatsächlich: Fraud"],
+        z=cm, x=["vorhergesagt: legitim", "vorhergesagt: Betrug"],
+        y=["tatsächlich: legitim", "tatsächlich: Betrug"],
         text=z_text, texttemplate="%{text}", textfont={"size": 17},
         colorscale=[[0, COLOR_GRID], [1, COLOR_FRAUD]], showscale=False,
     ))
@@ -81,21 +81,21 @@ with colB:
     st.plotly_chart(fig, width="stretch")
 
 st.caption(
-    "Niedriger Schwellwert → mehr Betrug gefunden (hoher Recall), aber mehr Fehlalarme "
-    "(niedrige Precision). Hoher Schwellwert → umgekehrt. Die Kurven kreuzen sich – "
-    "dort liegt die beste Balance (F1)."
+    "Ein niedriger Schwellwert findet mehr Betrug (hoher Recall), erzeugt aber mehr "
+    "Fehlalarme (niedrige Precision). Ein hoher Schwellwert wirkt umgekehrt. Am "
+    "Schnittpunkt der Kurven liegt die beste Balance (F1)."
 )
 
 # --- Kostenrechnung -------------------------------------------------------
-st.subheader("💶 Was kostet welcher Fehler?")
+st.subheader("Kostenbetrachtung")
 st.markdown(
-    "Fraud Detection ist am Ende eine **Kostenfrage**. Ein übersehener Betrug (FN) "
-    "kostet den durchgelassenen Schaden; ein Fehlalarm (FP) kostet manuelle Prüfung "
-    "und Kundenärger. Stellt die Annahmen ein und findet den **kostenminimalen** "
-    "Schwellwert:"
+    "Die Wahl des Schwellwerts ist letztlich eine Kostenfrage. Ein übersehener Betrug "
+    "(FN) kostet den durchgelassenen Schaden, ein Fehlalarm (FP) verursacht manuelle "
+    "Prüfung und Kundenaufwand. Über die folgenden Annahmen lässt sich der "
+    "kostenminimale Schwellwert bestimmen."
 )
 col1, col2 = st.columns(2)
-cost_fn = col1.number_input("Kosten je übersehenem Fraud (FN) in €", 0, 5000, COST_FN_DEFAULT, 10)
+cost_fn = col1.number_input("Kosten je übersehenem Betrug (FN) in €", 0, 5000, COST_FN_DEFAULT, 10)
 cost_fp = col2.number_input("Kosten je Fehlalarm (FP) in €", 0, 500, COST_FP_DEFAULT, 1)
 
 # Kosten über alle Schwellwerte
@@ -126,8 +126,9 @@ m3.metric("Einsparpotenzial", f"{cur_cost - min_cost:,.0f} €".replace(",", "."
           delta_color="inverse")
 
 st.info(
-    "💡 **Kernaussage für die Präsentation:** Der „beste“ Schwellwert hängt von den "
-    "Kostenannahmen ab, nicht vom Modell allein. Wer übersehenen Betrug teuer "
-    "ansetzt, senkt den Schwellwert (mehr Recall); wer Fehlalarme scheut, hebt ihn an. "
-    "Das Modell liefert die Wahrscheinlichkeiten – die Entscheidung trifft das Geschäft."
+    "Der kostenminimale Schwellwert hängt von den Kostenannahmen ab, nicht vom Modell "
+    "allein. Werden übersehene Betrugsfälle teuer angesetzt, sinkt der optimale "
+    "Schwellwert (mehr Recall); werden Fehlalarme stärker gewichtet, steigt er. Das "
+    "Modell liefert die Wahrscheinlichkeiten, die Schwellwert-Entscheidung ist eine "
+    "fachliche bzw. wirtschaftliche Abwägung."
 )
