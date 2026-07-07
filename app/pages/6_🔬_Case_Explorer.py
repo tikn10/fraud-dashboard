@@ -27,16 +27,15 @@ und warum das Modell danebenliegt.
 if not u.case_explorer_available():
     st.warning(
         "Fallbeispiele noch nicht erzeugt.\n\n"
-        "Einmalig lokal ausführen (greift auf das Modeling-Parquet zu):\n\n"
-        "```\npip install scikit-learn\npython scripts/02_train_and_predict.py\n```\n\n"
-        "Das Skript trainiert den Random Forest nach, berechnet die Wahrscheinlichkeit "
-        "pro Test-Transaktion und schreibt `data/processed/case_explorer.parquet`. "
-        "Danach erscheint diese Seite automatisch."
+        "Einmalig lokal ausführen (greift auf die Modeling-Parquets zu):\n\n"
+        "```\npip install lightgbm scikit-learn\npython scripts/03_lgbm_threshold_data.py\n```\n\n"
+        "Das Skript trainiert LightGBM wie im Team-Lauf nach und schreibt "
+        "`results/lgbm_case_explorer.parquet`. Danach erscheint diese Seite automatisch."
     )
     st.stop()
 
 df = u.load_case_explorer()
-THR = 0.25  # RF-Arbeitspunkt
+THR = 0.65  # LightGBM-Arbeitspunkt (wie im Modellvergleich)
 
 df["pred"] = (df["y_pred_proba"] >= THR).astype(int)
 df["Ergebnis"] = np.select(
@@ -57,8 +56,10 @@ for col, key, color in zip(
     col.metric(key, u.fmt_int(counts.get(key, 0)))
 
 st.caption(
-    f"Arbeitspunkt: Schwellwert {THR:.2f} (Random Forest). Stichprobe des Testsets, "
-    "bestehend aus allen Betrugsfällen und einer Auswahl legitimer Transaktionen."
+    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM), vollständiges 10.000er-Eval-Set "
+    "aus dem Modellvergleich. Grundlage sind die nachtrainierten Vorhersagen aus "
+    "Skript 03; weicht die lokale lightgbm-Version vom Team-Lauf ab, können die "
+    "Zahlen leicht von der Modellvergleichsseite abweichen."
 )
 
 # --- Betrag vs. Wahrscheinlichkeit ----------------------------------------

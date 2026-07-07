@@ -29,12 +29,13 @@ AGG_DIR = PROCESSED_DIR / "aggregates"              # kleine Aggregat-Tabellen
 PLOT_SAMPLE_PATH = PROCESSED_DIR / "plot_sample.parquet"
 CARD_STATS_PATH = PROCESSED_DIR / "card_stats.parquet"
 META_PATH = PROCESSED_DIR / "meta.json"
-CASE_EXPLORER_PATH = PROCESSED_DIR / "case_explorer.parquet"  # Output von 02_train_and_predict.py
+
 
 # Modell-Ergebnisse (aus den Logs des Modellierungs-Teams aufbereitet)
 RESULTS_DIR = PROJECT_ROOT / "results"
 MODEL_RESULTS_PATH = RESULTS_DIR / "model_results.json"
-RF_THRESHOLD_CURVE_PATH = RESULTS_DIR / "rf_threshold_curve.csv"
+LGBM_EVAL_PREDICTIONS_PATH = RESULTS_DIR / "lgbm_eval_predictions.parquet"
+CASE_EXPLORER_PATH = RESULTS_DIR / "lgbm_case_explorer.parquet"  # Output von 03_lgbm_threshold_data.py
 LLM_RESULTS_PATH = RESULTS_DIR / "llm_results.json"
 RULES_RAW_PATH = RESULTS_DIR / "rules_raw.txt"
 RULES_ENGINEERED_PATH = RESULTS_DIR / "rules_engineered.txt"
@@ -80,9 +81,9 @@ PLOT_SAMPLE_MAX_ROWS = 300_000  # Obergrenze je Klasse im Plot-Sample
 # ---------------------------------------------------------------------------
 CANONICAL_FRAUD_RATE = 0.0054   # 0,54 % laut Modell-Logs (Volldatensatz)
 
-# Default-Kostenannahmen für die Threshold-/Kostenanalyse (anpassbar in der App)
-COST_FN_DEFAULT = 200   # € je übersehenem Fraud (durchschn. durchgelassener Schaden)
-COST_FP_DEFAULT = 5     # € je Fehlalarm (manuelle Prüfung / Kundenärger)
+# Default-Kostenannahme für die Kostenbetrachtung (anpassbar in der App).
+# Übersehener Betrug (FN) wird betragsgenau gerechnet und braucht keinen Default.
+COST_FP_DEFAULT = 5     # $ je Fehlalarm (manuelle Prüfung, Kundenkontakt)
 
 # ---------------------------------------------------------------------------
 # Farbschema (eine Signalfarbe für Fraud, eine neutrale für legitim –

@@ -11,13 +11,14 @@ fraud_dashboard/
 ├── requirements.txt
 ├── results/                   # Modell-Ergebnisse aus den Team-Logs (klein, im Repo)
 │   ├── model_results.json     # finale ML-Metriken (4 Modelle, 10k-EVAL-Set)
-│   ├── rf_threshold_curve.csv # illustrative Schwellwert-Kurve (RF)
+│   ├── lgbm_eval_predictions.parquet  # LightGBM-Vorhersagen (aus Skript 03)
+│   ├── lgbm_case_explorer.parquet     # Eval-Zeilen + Vorhersagen (aus Skript 03)
 │   ├── llm_results.json       # LLM-Metriken (Claude Haiku 4.5, 6 Läufe)
 │   ├── rules_raw.txt          # vom LLM abgeleitete Regeln (Rohdaten-Sicht)
 │   └── rules_engineered.txt   # vom LLM abgeleitete Regeln (aufbereitet)
 ├── scripts/
 │   ├── 01_preprocess.py       # Pipeline: 60 Roh-CSVs -> Parquet + Aggregate
-│   └── 02_train_and_predict.py# RF nachtrainieren -> Fallbeispiele für Case Explorer
+│   └── 03_lgbm_threshold_data.py # LightGBM auf 10k-Eval -> Threshold-Seite + Case Explorer
 ├── notebooks/
 │   └── 01_rohdaten_check.ipynb
 ├── app/
@@ -73,20 +74,24 @@ Karten erscheinen nur als Hash-ID + letzte 4 Ziffern. Das Faker-Artefakt
 streamlit run app\Home.py
 ```
 
-## 2b) Fallbeispiele für den Case Explorer erzeugen (optional, einmalig)
+## 2b) Daten für Threshold-Seite und Case Explorer erzeugen (einmalig)
 
-Der Case Explorer braucht Vorhersagen pro Transaktion. Diese erzeugt ein Skript,
-das den Random Forest auf dem Modeling-Parquet des Teams nachtrainiert:
+Die Seite "Schwellwert und Kosten" arbeitet mit LightGBM-Vorhersagen auf dem
+10.000er-Eval-Set. Diese erzeugt (wie im Team-Lauf nachgebildet):
 
 ```bat
-pip install scikit-learn
-python scripts\02_train_and_predict.py
+pip install lightgbm scikit-learn
+python scripts\03_lgbm_threshold_data.py
 ```
 
-Pfad zum Modeling-Parquet in `config.py` -> `MODELING_DIR` (Standard:
-`...\credit_card_fraud\modeling`). Das Skript schreibt
-`data/processed/case_explorer.parquet` (klein, kommt mit ins Repo). Ohne diese
-Datei zeigt die Case-Explorer-Seite eine Anleitung statt eines Fehlers.
+Voraussetzung: `train_engineered.parquet` und `eval_engineered.parquet` liegen
+im Modeling-Ordner unter `datasets\` (Pfad in `config.py` -> `MODELING_DIR`).
+Das Skript verifiziert die Zahlen gegen den geloggten Arbeitspunkt (0,65) und
+schreibt `results/lgbm_eval_predictions.parquet` sowie
+`results/lgbm_case_explorer.parquet` (beide klein, kommen mit ins Repo).
+Meldet die Verifikation eine Abweichung, liegt das meist an einer anderen
+lightgbm-Version als im Team-Lauf; für exakte Übereinstimmung dieselbe Version
+installieren (`pip install lightgbm==<Version des Teams>`) und erneut ausführen.
 
 ## 3) Notebook (optional)
 

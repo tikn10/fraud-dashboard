@@ -41,25 +41,44 @@ for name, m in models.items():
 tbl = pd.DataFrame(rows).sort_values("F1", ascending=False)
 best = tbl.iloc[0]["Modell"]
 
+# Bestes LLM-Setup als Nebenvergleich ergaenzen (siehe Fussnote)
+llm = u.load_llm_results()
+llm_best = max(llm["runs"], key=lambda r: r["f1"])
+llm_cm = llm_best["cm"]
+llm_row = pd.DataFrame([{
+    "Modell": f"LLM: {llm['model']} ({llm_best['method']}/{llm_best['view']}) *",
+    "Threshold": np.nan,
+    "Precision": llm_best["precision"], "Recall": llm_best["recall"], "F1": llm_best["f1"],
+    "erkannt (TP)": llm_cm[1][1], "übersehen (FN)": llm_cm[1][0], "Fehlalarme (FP)": llm_cm[0][1],
+}])
+tbl_full = pd.concat([tbl, llm_row], ignore_index=True)
+
 st.subheader("Kennzahlen der Betrugsklasse")
-melt = tbl.melt(id_vars="Modell", value_vars=["Precision", "Recall", "F1"],
-                var_name="Metrik", value_name="Wert")
+melt = tbl_full.melt(id_vars="Modell", value_vars=["Precision", "Recall", "F1"],
+                     var_name="Metrik", value_name="Wert")
 fig = px.bar(
     melt, x="Modell", y="Wert", color="Metrik", barmode="group",
     color_discrete_sequence=[COLOR_LEGIT, COLOR_FRAUD, "#9B8FD1"],
-    category_orders={"Modell": tbl["Modell"].tolist()},
+    category_orders={"Modell": tbl_full["Modell"].tolist()},
 )
 fig.update_layout(height=400, yaxis_range=[0, 1], yaxis_title="")
 st.plotly_chart(fig, width="stretch")
 
 st.dataframe(
-    tbl, hide_index=True, width="stretch",
+    tbl_full, hide_index=True, width="stretch",
     column_config={
         "Precision": st.column_config.NumberColumn(format="%.3f"),
         "Recall": st.column_config.NumberColumn(format="%.3f"),
         "F1": st.column_config.NumberColumn(format="%.3f"),
         "Threshold": st.column_config.NumberColumn(format="%.2f"),
     },
+)
+
+st.caption(
+    "* Bestes LLM-Setup aus dem LLM-Vergleich (Seite 7), als Nebenvergleich: "
+    "ausgewertet auf einer 7.000-Zeilen-Teilmenge desselben Eval-Sets (38 Betrugsfälle); "
+    "der Schwellwert liegt dort auf einer Score-Skala von 0 bis 100 und ist deshalb "
+    "nicht angegeben."
 )
 
 st.markdown(
@@ -76,14 +95,20 @@ Einordnung der Ergebnisse:
 
 Die Gradient-Boosting-Verfahren (LightGBM, XGBoost) setzen sich durch, weil sie die
 nichtlinearen Wechselwirkungen zwischen den Merkmalen (etwa hoher Betrag, späte
-Uhrzeit und Abweichung vom kartenüblichen Betrag) am besten abbilden.
+Uhrzeit und Abweichung vom kartenüblichen Betrag) am besten abbilden. Das beste
+LLM-Setup liegt deutlich unter den Baumverfahren und nur vor der logistischen
+Regression; Details dazu auf der Seite "LLM vs. klassische Modelle".
 """
 )
 
 # --- Konfusionsmatrizen ----------------------------------------------------
 st.subheader("Konfusionsmatrizen")
-sel = st.selectbox("Modell auswählen", tbl["Modell"].tolist())
-cm = np.array(models[sel]["cm"])
+llm_label = f"LLM: {llm['model']} ({llm_best['method']}/{llm_best['view']})"
+sel = st.selectbox("Modell auswählen", tbl["Modell"].tolist() + [llm_label])
+if sel == llm_label:
+    cm = np.array(llm_best["cm"])
+else:
+    cm = np.array(models[sel]["cm"])
 
 labels = ["legitim", "Betrug"]
 z_text = [[f"{v:,}".replace(",", ".") for v in row] for row in cm]
@@ -101,6 +126,11 @@ c1, c2, c3 = st.columns(3)
 c1.metric("Erkannt (TP)", u.fmt_int(tp), help="Betrug korrekt gefunden")
 c2.metric("Übersehen (FN)", u.fmt_int(fn), help="Betrug durchgelassen (der teure Fehler)")
 c3.metric("Fehlalarme (FP)", u.fmt_int(fp), help="Legitime Transaktion fälschlich blockiert")
+if sel == llm_label:
+    st.caption(
+        f"Auswertung auf der 7.000-Zeilen-Teilmenge ({llm['n_fraud_test']} Betrugsfälle); "
+        "die Gesamtsummen sind deshalb kleiner als bei den ML-Modellen (10.000 Zeilen)."
+    )
 
 st.divider()
 st.caption(

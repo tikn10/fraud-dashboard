@@ -65,9 +65,13 @@ def load_model_results() -> dict:
     return json.loads(cfg.MODEL_RESULTS_PATH.read_text())
 
 
+def lgbm_predictions_available() -> bool:
+    return cfg.LGBM_EVAL_PREDICTIONS_PATH.exists()
+
+
 @st.cache_data(show_spinner=False)
-def load_threshold_curve() -> pd.DataFrame:
-    return pd.read_csv(cfg.RF_THRESHOLD_CURVE_PATH)
+def load_lgbm_predictions() -> pd.DataFrame:
+    return pd.read_parquet(cfg.LGBM_EVAL_PREDICTIONS_PATH)
 
 
 @st.cache_data(show_spinner=False)
