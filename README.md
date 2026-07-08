@@ -13,9 +13,6 @@ fraud_dashboard/
 │   ├── model_results.json     # finale ML-Metriken (4 Modelle, 10k-EVAL-Set)
 │   ├── lgbm_eval_predictions.parquet  # LightGBM-Vorhersagen (aus Skript 03)
 │   ├── lgbm_case_explorer.parquet     # Eval-Zeilen + Vorhersagen (aus Skript 03)
-│   ├── llm_results.json       # LLM-Metriken (Claude Haiku 4.5, 6 Läufe)
-│   ├── rules_raw.txt          # vom LLM abgeleitete Regeln (Rohdaten-Sicht)
-│   └── rules_engineered.txt   # vom LLM abgeleitete Regeln (aufbereitet)
 ├── scripts/
 │   ├── 01_preprocess.py       # Pipeline: 60 Roh-CSVs -> Parquet + Aggregate
 │   └── 03_lgbm_threshold_data.py # LightGBM auf 7k-Testset -> Threshold-Seite + Case Explorer
@@ -30,8 +27,7 @@ fraud_dashboard/
 │   │   ├── 3_🧬_Feature_Engineering.py
 │   │   ├── 4_🏆_Modellvergleich.py
 │   │   ├── 5_🎚️_Threshold_und_Kosten.py
-│   │   ├── 6_🔬_Case_Explorer.py
-│   │   └── 7_🤖_LLM_vs_ML.py
+│   │   └── 6_🔬_Case_Explorer.py
 │   └── .streamlit/config.toml # Dunkles Theme
 └── data/processed/            # Output der Pipeline (wird erzeugt)
 ```
@@ -77,7 +73,7 @@ streamlit run app\Home.py
 ## 2b) Daten für Threshold-Seite und Case Explorer erzeugen (einmalig)
 
 Die Seiten "Schwellwert und Kosten" und "Case Explorer" arbeiten mit
-LightGBM-Vorhersagen auf dem 7.000er-Testset (identisch zu den LLM-Läufen).
+LightGBM-Vorhersagen auf dem größeren, im Training ungenutzten Auswertungsset.
 Diese erzeugt (wie im Team-Lauf nachgebildet):
 
 ```bat

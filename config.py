@@ -36,9 +36,7 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 MODEL_RESULTS_PATH = RESULTS_DIR / "model_results.json"
 LGBM_EVAL_PREDICTIONS_PATH = RESULTS_DIR / "lgbm_eval_predictions.parquet"
 CASE_EXPLORER_PATH = RESULTS_DIR / "lgbm_case_explorer.parquet"  # Output von 03_lgbm_threshold_data.py
-LLM_RESULTS_PATH = RESULTS_DIR / "llm_results.json"
-RULES_RAW_PATH = RESULTS_DIR / "rules_raw.txt"
-RULES_ENGINEERED_PATH = RESULTS_DIR / "rules_engineered.txt"
+LLM_RESULTS_PATH = RESULTS_DIR / "llm_results.json"  # LLM-Metriken für den Modellvergleich
 
 # Ordner mit dem Modeling-Parquet des Teams (nur lokal nötig für 02_train_and_predict.py)
 MODELING_DIR = Path(

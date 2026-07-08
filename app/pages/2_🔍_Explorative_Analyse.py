@@ -124,6 +124,11 @@ piv = (
     * 100
 )
 piv = piv.rename(columns={"F": "weiblich", "M": "männlich"})
+# Zeilen nach Altersgruppe ordnen: unter 25, 25–50, über 50 (je urban/ländlich)
+_age_rank = {"unter 25": 0, "25–50": 1, "über 50": 2}
+piv = piv.reindex(
+    sorted(piv.index, key=lambda g: (_age_rank.get(g.split(" · ")[0], 9), g.split(" · ")[1]))
+)
 fig = px.imshow(
     piv,
     text_auto=".2f",

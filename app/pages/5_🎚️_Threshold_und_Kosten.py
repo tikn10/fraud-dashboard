@@ -9,25 +9,14 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import utils as u  # noqa: E402
+import config as cfg  # noqa: E402
 from config import COLOR_ACCENT, COLOR_FRAUD, COLOR_GRID, COLOR_LEGIT  # noqa: E402
 from config import COST_FP_DEFAULT  # noqa: E402
 
 u.page_setup("Schwellwert und Kosten", "🎚️")
 st.title("🎚️ Schwellwert und Kosten")
 
-st.markdown(
-    """
-Ein Modell gibt keine Ja/Nein-Antwort, sondern eine Wahrscheinlichkeit. Erst der
-Schwellwert legt fest, ab wann eine Transaktion als Betrug gilt. Er hat großen
-Einfluss auf das Ergebnis, und es gibt kein objektiv richtiges Optimum, sondern
-nur eines, das zu den Kosten der jeweiligen Fehler passt.
-
-Gezeigt wird LightGBM, das Modell mit dem höchsten F1-Wert, auf demselben
-7.000er-Testset wie im Modellvergleich. Der Schwellwert lässt sich in
-0,01-Schritten verschieben; Treffer, Fehlalarme und Kosten ändern sich
-entsprechend.
-"""
-)
+intro_placeholder = st.empty()
 
 if not u.lgbm_predictions_available():
     st.warning(
@@ -39,40 +28,86 @@ if not u.lgbm_predictions_available():
     )
     st.stop()
 
-pred_df = u.load_lgbm_predictions()
-y_true = pred_df["y_true"].to_numpy()
-proba = pred_df["y_pred_proba"].to_numpy()
-amt = pred_df["amt"].to_numpy()
+@st.cache_data(show_spinner=False)
+def dataset_counts() -> dict:
+    df = pd.read_parquet(cfg.LGBM_EVAL_PREDICTIONS_PATH, columns=["y_true"])
+    n_total = len(df)
+    n_fraud = int(df["y_true"].sum())
+    return {"total": n_total, "fraud": n_fraud, "legit": n_total - n_fraud}
 
-N_TOTAL = len(pred_df)
-N_FRAUD = int(y_true.sum())
-N_LEGIT = N_TOTAL - N_FRAUD
+
+_c = dataset_counts()
+N_TOTAL, N_FRAUD, N_LEGIT = _c["total"], _c["fraud"], _c["legit"]
+_n_total_str = f"{N_TOTAL:,}".replace(",", ".")
+
+intro_placeholder.markdown(
+    f"""
+Ein Modell gibt keine Ja/Nein-Antwort, sondern eine Wahrscheinlichkeit. Erst der
+Schwellwert legt fest, ab wann eine Transaktion als Betrug gilt. Er hat großen
+Einfluss auf das Ergebnis, und es gibt kein objektiv richtiges Optimum, sondern
+nur eines, das zu den Kosten der jeweiligen Fehler passt.
+
+Gezeigt wird LightGBM, das Modell mit dem höchsten F1-Wert. Zur besseren
+statistischen Aussagekraft läuft diese Analyse auf einem größeren, im Training
+ungenutzten Auswertungsset ({_n_total_str} Transaktionen, {N_FRAUD} Betrugsfälle);
+der Modellvergleich bleibt davon unberührt auf dem gemeinsamen 7.000er-Testset.
+Der Schwellwert lässt sich in 0,01-Schritten verschieben; Treffer, Fehlalarme
+und Kosten ändern sich entsprechend.
+"""
+)
 
 
 @st.cache_data(show_spinner=False)
-def sweep_curve(y: tuple, p: tuple) -> pd.DataFrame:
-    """Precision/Recall/F1 für Schwellwerte 0,01 bis 0,99 (Schrittweite 0,01)."""
-    y = np.asarray(y)
-    p = np.asarray(p)
-    rows = []
-    for t in np.round(np.arange(0.01, 1.00, 0.01), 2):
-        pred = p >= t
-        tp = int(np.sum(pred & (y == 1)))
-        fp = int(np.sum(pred & (y == 0)))
-        fn = int(np.sum(~pred & (y == 1)))
-        prec = tp / (tp + fp) if tp + fp else 0.0
-        rec = tp / (tp + fn) if tp + fn else 0.0
-        f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
-        rows.append({"threshold": t, "precision": prec, "recall": rec, "f1": f1,
-                     "tp": tp, "fp": fp, "fn": fn})
-    return pd.DataFrame(rows)
+def threshold_table() -> pd.DataFrame:
+    """Vollständige Kennzahl- und Kostenbasis je Schwellwert (0,01–0,99),
+    vektorisiert und ohne Argumente, damit Streamlit nichts hashen muss.
+    Enthält precision, recall, f1, tp, fp, fn und die Summe der übersehenen
+    Betragssummen (fn_amount) je Schwellwert."""
+    df = pd.read_parquet(cfg.LGBM_EVAL_PREDICTIONS_PATH)
+    y = df["y_true"].to_numpy()
+    p = df["y_pred_proba"].to_numpy()
+    a = df["amt"].to_numpy()
+
+    thresholds = np.round(np.arange(0.01, 1.00, 0.01), 2)
+    n_fraud = int((y == 1).sum())
+    fraud_amt_total = float(a[y == 1].sum())
+
+    # Sortierung nach Wahrscheinlichkeit -> Kennzahlen per kumulativer Summe
+    order = np.argsort(p)
+    p_sorted = p[order]
+    y_sorted = y[order]
+    a_sorted = a[order]
+
+    # Für jeden Threshold: Index, ab dem p >= t gilt (alles davor wird "legitim" vorhergesagt)
+    idx = np.searchsorted(p_sorted, thresholds, side="left")
+
+    # Kumulative Anzahl Betrug bzw. Betragssumme UNTERHALB eines Index
+    cum_fraud = np.concatenate([[0], np.cumsum(y_sorted == 1)])
+    cum_fraud_amt = np.concatenate([[0.0], np.cumsum(np.where(y_sorted == 1, a_sorted, 0.0))])
+
+    fn = cum_fraud[idx]                       # übersehene Betrugsfälle (unter Schwelle)
+    fn_amount = cum_fraud_amt[idx]            # deren Betragssumme
+    tp = n_fraud - fn                         # erkannte Betrugsfälle
+    predicted_pos = len(p) - idx              # als Betrug vorhergesagt (>= Schwelle)
+    fp = predicted_pos - tp                   # Fehlalarme
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        precision = np.where(tp + fp > 0, tp / (tp + fp), 0.0)
+        recall = np.where(tp + fn > 0, tp / (tp + fn), 0.0)
+        f1 = np.where(precision + recall > 0,
+                      2 * precision * recall / (precision + recall), 0.0)
+
+    return pd.DataFrame({
+        "threshold": thresholds, "precision": precision, "recall": recall, "f1": f1,
+        "tp": tp.astype(int), "fp": fp.astype(int), "fn": fn.astype(int),
+        "fn_amount": fn_amount,
+    })
 
 
-curve = sweep_curve(tuple(y_true), tuple(proba))
+curve = threshold_table()
 
 # Kennpunkte der Kurve
 f1_best = curve.loc[curve["f1"].idxmax()]
-pr_cross = curve.loc[(curve["precision"] - curve["recall"]).abs().idxmin()]
 
 # --- Slider (0,01-Schritte) -------------------------------------------------
 thr = st.select_slider(
@@ -109,22 +144,17 @@ with colB:
                     line=dict(color=COLOR_LEGIT, width=2))
     fig.add_scatter(x=curve["threshold"], y=curve["recall"], name="Recall",
                     line=dict(color=COLOR_FRAUD, width=2))
-    fig.add_scatter(x=[pr_cross["threshold"]], y=[pr_cross["precision"]],
-                    mode="markers", name="Precision = Recall",
-                    marker=dict(size=11, color="#E8EDF5", symbol="circle-open",
-                                line=dict(width=2)))
     fig.add_vline(x=float(f1_best["threshold"]), line_dash="dot", line_color="#9B8FD1",
                   annotation_text=f"F1-Maximum ({f1_best['threshold']:.2f})")
     fig.add_vline(x=thr, line_dash="dash", line_color=COLOR_ACCENT)
-    fig.update_layout(height=340, title="Precision und Recall über den Schwellwert",
-                      xaxis_title="Schwellwert", yaxis_range=[0, 1.02])
+    fig.update_layout(height=360, title="Precision und Recall über den Schwellwert",
+                      xaxis_title="Schwellwert", yaxis_range=[0, 1.02],
+                      legend=dict(orientation="h", yanchor="top", y=-0.2))
     st.plotly_chart(fig, width="stretch")
 
 st.caption(
     f"Ein niedriger Schwellwert findet mehr Betrug (hoher Recall), erzeugt aber mehr "
     f"Fehlalarme (niedrige Precision). Ein hoher Schwellwert wirkt umgekehrt. Der "
-    f"markierte Punkt (Precision = Recall, bei {pr_cross['threshold']:.2f}) ist der "
-    f"Schnittpunkt beider Kurven; er ist eine mögliche Balance, aber kein Optimum. Der "
     f"beste Kompromiss nach F1 liegt bei {f1_best['threshold']:.2f} "
     f"(F1 {f1_best['f1']:.3f}); der wirtschaftlich beste Punkt folgt unten aus der "
     f"Kostenbetrachtung. Der Arbeitspunkt des Teams (0,35) ist die Standardposition "
@@ -158,20 +188,7 @@ with col_b:
     )
 
 
-@st.cache_data(show_spinner=False)
-def fn_amount_by_threshold(y: tuple, p: tuple, a: tuple) -> pd.DataFrame:
-    """Summe der Beträge übersehener Betrugsfälle je Schwellwert."""
-    y = np.asarray(y); p = np.asarray(p); a = np.asarray(a)
-    fraud_mask = y == 1
-    rows = []
-    for t in np.round(np.arange(0.01, 1.00, 0.01), 2):
-        missed = fraud_mask & (p < t)
-        rows.append({"threshold": t, "fn_amount": float(a[missed].sum())})
-    return pd.DataFrame(rows)
-
-
-fn_amt = fn_amount_by_threshold(tuple(y_true), tuple(proba), tuple(amt))
-cost_df = curve.merge(fn_amt, on="threshold")
+cost_df = curve.copy()
 if fn_mode == "Tatsächlicher Transaktionsbetrag":
     cost_df["Gesamtkosten"] = cost_df["fn_amount"] + cost_df["fp"] * cost_fp
 else:
@@ -190,7 +207,7 @@ fig.add_vline(x=best_thr, line_dash="dot", line_color=COLOR_FRAUD,
 fig.add_vline(x=thr, line_dash="dash", line_color=COLOR_LEGIT,
               annotation_text=f"aktuell ({thr:.2f})")
 fig.update_layout(height=360, xaxis_title="Schwellwert",
-                  yaxis_title="Gesamtkosten ($) im 7.000er-Testset")
+                  yaxis_title="Gesamtkosten ($) im Auswertungsset")
 st.plotly_chart(fig, width="stretch")
 
 m1, m2, m3 = st.columns(3)
@@ -206,7 +223,7 @@ if fn_mode == "Tatsächlicher Transaktionsbetrag":
         "Modell allein. Weil übersehene Betrugsfälle hier mit ihrem tatsächlichen "
         "Betrag zu Buche schlagen, wiegen wenige teure Fälle schwerer als viele "
         "kleine. Werden Fehlalarme stärker gewichtet, steigt der optimale "
-        "Schwellwert. Alle Beträge beziehen sich auf das 7.000er-Testset."
+        "Schwellwert. Alle Beträge beziehen sich auf das Auswertungsset."
     )
 else:
     st.info(
@@ -214,5 +231,5 @@ else:
         "unabhängig vom Transaktionsbetrag. Das Kostenminimum verschiebt sich mit "
         "dem Verhältnis der beiden Pauschalen: Je teurer ein übersehener Fall "
         "angesetzt wird, desto niedriger der optimale Schwellwert. Alle Beträge "
-        "beziehen sich auf das 7.000er-Testset."
+        "beziehen sich auf das Auswertungsset."
     )

@@ -56,10 +56,9 @@ for col, key, color in zip(
     col.metric(key, u.fmt_int(counts.get(key, 0)))
 
 st.caption(
-    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM), dasselbe 7.000er-Testset wie im "
-    "Modellvergleich. Grundlage sind die nachtrainierten Vorhersagen aus Skript 03; "
-    "weicht die lokale lightgbm-Version vom Team-Lauf ab, können die Zahlen leicht "
-    "von der Modellvergleichsseite abweichen."
+    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM), ausgewertet auf dem größeren, im "
+    "Training ungenutzten Auswertungsset. Die Fallzahlen sind deshalb höher als im "
+    "Modellvergleich, der auf dem gemeinsamen 7.000er-Testset basiert."
 )
 
 # --- Betrag vs. Wahrscheinlichkeit ----------------------------------------

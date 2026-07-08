@@ -128,16 +128,14 @@ def main() -> None:
     model = LGBMClassifier(**params)
     model.fit(X_train_scaled, y_train)
 
-    print("Berechne Vorhersage-Wahrscheinlichkeiten fuer das Testset ...")
-    proba = model.predict_proba(X_test_scaled)[:, 1]
-
-    # ---- Verifikation gegen die geloggten Zahlen --------------------------
+    # ---- Verifikation auf dem 7.000er-Testset (Konsistenz zum Modellvergleich) ----
+    proba_test = model.predict_proba(X_test_scaled)[:, 1]
     t = EXPECTED["threshold"]
-    pred = (proba >= t).astype(int)
+    pred = (proba_test >= t).astype(int)
     prec = precision_score(y_test, pred, zero_division=0)
     rec = recall_score(y_test, pred, zero_division=0)
     cm = confusion_matrix(y_test, pred)
-    print(f"\nVerifikation am Arbeitspunkt {t:.2f} (Soll aus ml_results.txt):")
+    print(f"\nVerifikation auf 7.000er-Testset, Arbeitspunkt {t:.2f} (Soll aus ml_results.txt):")
     print(f"  Precision: {prec:.4f}  (Soll {EXPECTED['precision']:.4f})")
     print(f"  Recall   : {rec:.4f}  (Soll {EXPECTED['recall']:.4f})")
     print(f"  Matrix   : {cm.tolist()}  (Soll {EXPECTED['cm']})")
@@ -148,27 +146,54 @@ def main() -> None:
               "lightgbm-/scikit-learn-Version als beim Team-Lauf oder fehlende "
               "Tuning-Datei. Die Dashboard-Seiten bleiben in sich konsistent.")
 
-    # ---- Export ------------------------------------------------------------
+    # ---- Vorhersagen auf dem groesseren Auswertungsset (Threshold + Case Explorer) ----
+    analysis_path = find([ds / "train_engineered_100K.parquet",
+                          ds / "eval_engineered_100K.parquet",
+                          ds / "analysis_100K.parquet"])
+    if analysis_path is None:
+        sys.exit(
+            "Auswertungsset nicht gefunden (erwartet z. B. train_engineered_100K.parquet in "
+            + str(ds) + "). Fuer die Threshold- und Case-Explorer-Seite noetig."
+        )
+    print(f"\nLade Auswertungsset: {analysis_path}")
+    df_ana_raw = pd.read_parquet(analysis_path)
+    n_fraud_ana = int(df_ana_raw["is_fraud"].sum())
+    print(f"  {len(df_ana_raw):,} Zeilen ({n_fraud_ana} Betrug) — disjunkt zum Training")
+
+    # Gleiche Feature-Aufbereitung wie beim Training (Dummies an Trainingsspalten ausrichten)
+    df_ana = df_ana_raw.copy()
+    if "row_id" in df_ana.columns:
+        df_ana = df_ana.drop(columns=["row_id"])
+    df_ana = pd.get_dummies(
+        df_ana, columns=[c for c in ["category", "gender"] if c in df_ana.columns],
+        drop_first=True,
+    )
+    X_ana = df_ana.drop(columns=["is_fraud"]).reindex(columns=X_train.columns, fill_value=0)
+    y_ana = df_ana_raw["is_fraud"].astype(int)
+    X_ana_scaled = pd.DataFrame(scaler.transform(X_ana), columns=X_train.columns)
+    proba_ana = model.predict_proba(X_ana_scaled)[:, 1]
+
+    # ---- Export (basiert auf dem 100k-Auswertungsset) ----------------------
     cfg.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     out = pd.DataFrame({
-        "amt": df_eval_raw.loc[test_mask, "amt"].to_numpy().astype("float32"),
-        "y_true": y_test.to_numpy().astype("int8"),
-        "y_pred_proba": proba.astype("float32"),
+        "amt": df_ana_raw["amt"].to_numpy().astype("float32"),
+        "y_true": y_ana.to_numpy().astype("int8"),
+        "y_pred_proba": proba_ana.astype("float32"),
     })
     out.to_parquet(cfg.LGBM_EVAL_PREDICTIONS_PATH, index=False)
 
-    avail = [c for c in DISPLAY_COLS if c in df_eval_raw.columns]
-    case = df_eval_raw.loc[test_mask, avail].reset_index(drop=True).copy()
-    case["y_true"] = y_test.to_numpy().astype("int8")
-    case["y_pred_proba"] = proba.astype("float32")
+    avail = [c for c in DISPLAY_COLS if c in df_ana_raw.columns]
+    case = df_ana_raw[avail].reset_index(drop=True).copy()
+    case["y_true"] = y_ana.to_numpy().astype("int8")
+    case["y_pred_proba"] = proba_ana.astype("float32")
     case.to_parquet(cfg.CASE_EXPLORER_PATH, index=False)
 
     print("\n" + "=" * 64)
-    print(f"Geschrieben: {cfg.LGBM_EVAL_PREDICTIONS_PATH}")
-    print(f"  {len(out):,} Zeilen, {cfg.LGBM_EVAL_PREDICTIONS_PATH.stat().st_size/1024:.0f} KB")
-    print(f"Geschrieben: {cfg.CASE_EXPLORER_PATH}")
-    print(f"  {len(case):,} Zeilen, {cfg.CASE_EXPLORER_PATH.stat().st_size/1024:.0f} KB")
+    print(f"Threshold-/Kosten- und Case-Explorer-Daten auf {len(out):,} Zeilen "
+          f"({n_fraud_ana} Betrug):")
+    print(f"  {cfg.LGBM_EVAL_PREDICTIONS_PATH}  ({cfg.LGBM_EVAL_PREDICTIONS_PATH.stat().st_size/1024:.0f} KB)")
+    print(f"  {cfg.CASE_EXPLORER_PATH}  ({cfg.CASE_EXPLORER_PATH.stat().st_size/1024:.0f} KB)")
     print("  Beide Dateien kommen mit ins Git-Repo (results/).")
     print("=" * 64)
 

@@ -65,6 +65,11 @@ def load_model_results() -> dict:
     return json.loads(cfg.MODEL_RESULTS_PATH.read_text())
 
 
+@st.cache_data(show_spinner=False)
+def load_llm_results() -> dict:
+    return json.loads(cfg.LLM_RESULTS_PATH.read_text())
+
+
 def lgbm_predictions_available() -> bool:
     return cfg.LGBM_EVAL_PREDICTIONS_PATH.exists()
 
@@ -72,17 +77,6 @@ def lgbm_predictions_available() -> bool:
 @st.cache_data(show_spinner=False)
 def load_lgbm_predictions() -> pd.DataFrame:
     return pd.read_parquet(cfg.LGBM_EVAL_PREDICTIONS_PATH)
-
-
-@st.cache_data(show_spinner=False)
-def load_llm_results() -> dict:
-    return json.loads(cfg.LLM_RESULTS_PATH.read_text())
-
-
-@st.cache_data(show_spinner=False)
-def load_rules(view: str) -> str:
-    path = cfg.RULES_RAW_PATH if view == "raw" else cfg.RULES_ENGINEERED_PATH
-    return path.read_text(encoding="utf-8")
 
 
 def case_explorer_available() -> bool:

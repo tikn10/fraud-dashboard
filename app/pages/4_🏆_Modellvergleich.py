@@ -22,11 +22,11 @@ st.markdown(
     f"""
 Vier klassische Modelle und der beste LLM-Ansatz wurden auf demselben Testset
 verglichen: {u.fmt_int(res['test_size'])} Transaktionen mit {res['n_fraud_test']}
-Betrugsfällen, identisch für alle Ansätze. Accuracy ist hier wenig aussagekräftig. Bei einer Betrugsrate von
-{u.fmt_pct(__import__('config').CANONICAL_FRAUD_RATE)} erreicht bereits ein Modell,
-das jede Transaktion als legitim einstuft, über 99 % Accuracy, ohne einen
-einzigen Betrugsfall zu erkennen. Aussagekräftig sind Precision und Recall der
-Betrugsklasse.
+Betrugsfällen, identisch für alle Ansätze. Accuracy ist hier wenig aussagekräftig.
+Bei einer Betrugsrate von {u.fmt_pct(__import__('config').CANONICAL_FRAUD_RATE)}
+erreicht bereits ein Modell, das jede Transaktion als legitim einstuft, über
+99 % Accuracy, ohne einen einzigen Betrugsfall zu erkennen. Aussagekräftig sind
+Precision und Recall der Betrugsklasse.
 """
 )
 
@@ -42,7 +42,7 @@ for name, m in models.items():
 tbl = pd.DataFrame(rows).sort_values("F1", ascending=False)
 best = tbl.iloc[0]["Modell"]
 
-# Bestes LLM-Setup als Nebenvergleich ergaenzen (siehe Fussnote)
+# Bestes LLM-Setup als zusätzliche Zeile (auf demselben Testset)
 llm = u.load_llm_results()
 llm_best = max(llm["runs"], key=lambda r: r["f1"])
 llm_cm = llm_best["cm"]
@@ -78,9 +78,9 @@ st.dataframe(
 )
 
 st.caption(
-    "* Bestes LLM-Setup aus dem LLM-Vergleich (Seite 7), ausgewertet auf demselben "
-    "Testset; der Schwellwert liegt dort auf einer Score-Skala von 0 bis 100 und ist "
-    "deshalb nicht angegeben."
+    "* Bestes LLM-Setup (Claude Haiku 4.5, Few-Shot-Rules auf Rohdaten), ausgewertet "
+    "auf demselben Testset; der Schwellwert liegt dort auf einer Score-Skala von 0 bis "
+    "100 und ist deshalb nicht angegeben."
 )
 
 st.markdown(
@@ -99,7 +99,7 @@ Die Gradient-Boosting-Verfahren (LightGBM, XGBoost) setzen sich durch, weil sie 
 nichtlinearen Wechselwirkungen zwischen den Merkmalen (etwa hoher Betrag, späte
 Uhrzeit und Abweichung vom kartenüblichen Betrag) am besten abbilden. Das beste
 LLM-Setup liegt deutlich unter den Baumverfahren und nur vor der logistischen
-Regression; Details dazu auf der Seite "LLM vs. klassische Modelle".
+Regression.
 """
 )
 
