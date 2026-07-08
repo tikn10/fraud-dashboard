@@ -35,7 +35,7 @@ if not u.case_explorer_available():
     st.stop()
 
 df = u.load_case_explorer()
-THR = 0.65  # LightGBM-Arbeitspunkt (wie im Modellvergleich)
+THR = 0.35  # LightGBM-Arbeitspunkt (wie im Modellvergleich)
 
 df["pred"] = (df["y_pred_proba"] >= THR).astype(int)
 df["Ergebnis"] = np.select(
@@ -56,10 +56,10 @@ for col, key, color in zip(
     col.metric(key, u.fmt_int(counts.get(key, 0)))
 
 st.caption(
-    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM), vollständiges 10.000er-Eval-Set "
-    "aus dem Modellvergleich. Grundlage sind die nachtrainierten Vorhersagen aus "
-    "Skript 03; weicht die lokale lightgbm-Version vom Team-Lauf ab, können die "
-    "Zahlen leicht von der Modellvergleichsseite abweichen."
+    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM), dasselbe 7.000er-Testset wie im "
+    "Modellvergleich. Grundlage sind die nachtrainierten Vorhersagen aus Skript 03; "
+    "weicht die lokale lightgbm-Version vom Team-Lauf ab, können die Zahlen leicht "
+    "von der Modellvergleichsseite abweichen."
 )
 
 # --- Betrag vs. Wahrscheinlichkeit ----------------------------------------

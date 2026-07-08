@@ -1,106 +1,106 @@
 {
-  "test_size": 10000,
-  "n_fraud_test": 55,
-  "source": "ml_results.txt (finaler Lauf, geteiltes 10k-EVAL-Set) \u2014 Threshold auf separatem Validierungs-Split getunt.",
-  "split_note": "Vereinheitlichte Pipeline (data_preparation.py): Feature Engineering auf allen 17 Mio. Zeilen, dann disjunkte stratifizierte Train/Eval-Samples. Threshold auf Validierung gew\u00e4hlt (nicht auf Test). EVAL hat nat\u00fcrliche Fraud-Rate ~0,55 %.",
+  "test_size": 7000,
+  "n_fraud_test": 38,
+  "source": "ml_results.txt (finaler Lauf 07.07.2026): Training auf 200k, Threshold auf dem 3.000er-Validierungsset, finale Metriken auf dem 7.000er-Testset.",
+  "split_note": "Auswertung \u00fcber das LLM-Split-Manifest: identisches 7.000er-Testset (38 Betrugsf\u00e4lle) f\u00fcr ML-Modelle und LLM-L\u00e4ufe. Alle Modelle mit getunten Hyperparametern (RandomizedSearchCV auf dem Trainingsset).",
   "models": {
     "LightGBM": {
-      "threshold": 0.65,
-      "precision": 0.8298,
-      "recall": 0.7091,
-      "f1": 0.7647,
+      "threshold": 0.35,
+      "precision": 0.7561,
+      "recall": 0.8158,
+      "f1": 0.7848,
       "cm": [
         [
-          9937,
-          8
+          6952,
+          10
         ],
         [
-          16,
-          39
+          7,
+          31
         ]
       ],
       "importances": {
-        "amt": 2582,
-        "amt_ratio_7d": 2523,
-        "age": 2259,
-        "city_pop_x": 2224,
-        "dist_km": 2216,
-        "merch_long": 2131,
-        "merch_lat": 2085,
-        "hour": 1628,
-        "day_of_week": 870,
-        "velocity_1h": 514
+        "amt": 4000,
+        "amt_ratio_7d": 3822,
+        "age": 3438,
+        "merch_long": 3037,
+        "dist_km": 2929,
+        "city_pop_x": 2927,
+        "merch_lat": 2796,
+        "hour": 2683,
+        "day_of_week": 1232,
+        "velocity_1h": 821
       }
     },
     "XGBoost": {
-      "threshold": 0.65,
-      "precision": 0.7843,
-      "recall": 0.7273,
-      "f1": 0.7547,
+      "threshold": 0.7,
+      "precision": 0.7632,
+      "recall": 0.7632,
+      "f1": 0.7632,
       "cm": [
         [
-          9934,
-          11
+          6953,
+          9
         ],
         [
-          15,
-          40
+          9,
+          29
         ]
       ],
       "importances": {
-        "amt": 0.2969,
-        "hour": 0.0913,
-        "amt_ratio_7d": 0.0869,
-        "category_health_fitness": 0.0782,
-        "category_kids_pets": 0.0419,
-        "category_gas_transport": 0.0391,
-        "velocity_1h": 0.0345,
-        "category_home": 0.0332,
-        "category_personal_care": 0.0291,
-        "category_food_dining": 0.0286
+        "amt": 0.2978,
+        "amt_ratio_7d": 0.1008,
+        "hour": 0.0972,
+        "category_health_fitness": 0.0595,
+        "category_home": 0.0389,
+        "category_kids_pets": 0.0369,
+        "velocity_1h": 0.0365,
+        "category_grocery_pos": 0.033,
+        "category_grocery_net": 0.0293,
+        "category_food_dining": 0.0285
       }
     },
     "Random Forest": {
-      "threshold": 0.35,
-      "precision": 0.8421,
-      "recall": 0.5818,
-      "f1": 0.6882,
+      "threshold": 0.45,
+      "precision": 0.7429,
+      "recall": 0.6842,
+      "f1": 0.7123,
       "cm": [
         [
-          9939,
-          6
+          6953,
+          9
         ],
         [
-          23,
-          32
+          12,
+          26
         ]
       ],
       "importances": {
-        "amt": 0.4107,
+        "amt": 0.4179,
         "amt_ratio_7d": 0.1762,
-        "hour": 0.1448,
-        "velocity_1h": 0.0389,
-        "age": 0.0339,
-        "dist_km": 0.0257,
-        "merch_long": 0.0252,
-        "city_pop_x": 0.0252,
-        "merch_lat": 0.0252,
-        "day_of_week": 0.0142
+        "hour": 0.1457,
+        "velocity_1h": 0.0386,
+        "age": 0.0323,
+        "merch_long": 0.0242,
+        "city_pop_x": 0.0238,
+        "dist_km": 0.0237,
+        "merch_lat": 0.0235,
+        "day_of_week": 0.0147
       }
     },
     "Logistic Regression": {
       "threshold": 0.9,
-      "precision": 0.2887,
-      "recall": 0.5091,
-      "f1": 0.3684,
+      "precision": 0.3,
+      "recall": 0.5526,
+      "f1": 0.3889,
       "cm": [
         [
-          9876,
-          69
+          6913,
+          49
         ],
         [
-          27,
-          28
+          17,
+          21
         ]
       ],
       "importances": null

@@ -162,8 +162,8 @@ Klassifikator für diese Aufgabe jedoch nicht geeignet.
 )
 
 st.caption(
-    "Methodischer Hinweis: Die LLM-Läufe wurden auf 7.000 Test-Zeilen (38 Betrugsfälle) "
-    "ausgewertet, die klassischen Modelle auf dem umgebenden 10.000er-Set (55 Betrugsfälle). "
-    "Beide haben dieselbe Grundrate (etwa 0,55 %). Für einen exakten Kopf-an-Kopf-Vergleich "
-    "müssten sie auf identischen Zeilen ausgewertet werden."
+    "Methodischer Hinweis: LLM-Läufe und klassische Modelle wurden auf dem identischen "
+    "7.000er-Testset (38 Betrugsfälle) ausgewertet; die Threshold-Wahl erfolgte jeweils "
+    "auf dem gemeinsamen 3.000er-Validierungsset. Der Vergleich ist damit ein exakter "
+    "Kopf-an-Kopf-Vergleich auf denselben Zeilen."
 )

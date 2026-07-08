@@ -2,7 +2,7 @@
   "model": "Claude Haiku 4.5",
   "test_size": 7000,
   "n_fraud_test": 38,
-  "note": "3 Methoden \u00d7 2 Datensichten. confidence/rules: Score 0\u2013100, Threshold auf Validierung getunt. hardlabel: direktes 0/1-Urteil. Berichtet auf 7.000 Test-Zeilen (Teilmenge des 10k-EVAL-Sets).",
+  "note": "3 Methoden \u00d7 2 Datensichten. confidence/rules: Score 0\u2013100, Threshold auf Validierung getunt. hardlabel: direktes 0/1-Urteil. Identisches 7.000er-Testset wie die klassischen Modelle (LLM-Split-Manifest).",
   "runs": [
     {
       "method": "rules",

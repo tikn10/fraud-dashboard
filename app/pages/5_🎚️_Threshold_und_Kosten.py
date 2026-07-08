@@ -22,8 +22,8 @@ Schwellwert legt fest, ab wann eine Transaktion als Betrug gilt. Er hat großen
 Einfluss auf das Ergebnis, und es gibt kein objektiv richtiges Optimum, sondern
 nur eines, das zu den Kosten der jeweiligen Fehler passt.
 
-Gezeigt wird LightGBM, das Modell mit dem höchsten F1-Wert, auf dem
-10.000er-Eval-Set aus dem Modellvergleich. Der Schwellwert lässt sich in
+Gezeigt wird LightGBM, das Modell mit dem höchsten F1-Wert, auf demselben
+7.000er-Testset wie im Modellvergleich. Der Schwellwert lässt sich in
 0,01-Schritten verschieben; Treffer, Fehlalarme und Kosten ändern sich
 entsprechend.
 """
@@ -78,7 +78,7 @@ pr_cross = curve.loc[(curve["precision"] - curve["recall"]).abs().idxmin()]
 thr = st.select_slider(
     "Schwellwert (ab welcher Betrugswahrscheinlichkeit wird blockiert?)",
     options=list(curve["threshold"]),
-    value=0.65,
+    value=0.35,
 )
 row = curve.loc[curve["threshold"] == thr].iloc[0]
 tp, fp, fn = int(row["tp"]), int(row["fp"]), int(row["fn"])
@@ -127,7 +127,7 @@ st.caption(
     f"Schnittpunkt beider Kurven; er ist eine mögliche Balance, aber kein Optimum. Der "
     f"beste Kompromiss nach F1 liegt bei {f1_best['threshold']:.2f} "
     f"(F1 {f1_best['f1']:.3f}); der wirtschaftlich beste Punkt folgt unten aus der "
-    f"Kostenbetrachtung. Der Arbeitspunkt des Teams (0,65) ist die Standardposition "
+    f"Kostenbetrachtung. Der Arbeitspunkt des Teams (0,35) ist die Standardposition "
     f"des Reglers."
 )
 
@@ -190,7 +190,7 @@ fig.add_vline(x=best_thr, line_dash="dot", line_color=COLOR_FRAUD,
 fig.add_vline(x=thr, line_dash="dash", line_color=COLOR_LEGIT,
               annotation_text=f"aktuell ({thr:.2f})")
 fig.update_layout(height=360, xaxis_title="Schwellwert",
-                  yaxis_title="Gesamtkosten ($) im 10.000er-Testset")
+                  yaxis_title="Gesamtkosten ($) im 7.000er-Testset")
 st.plotly_chart(fig, width="stretch")
 
 m1, m2, m3 = st.columns(3)
@@ -206,7 +206,7 @@ if fn_mode == "Tatsächlicher Transaktionsbetrag":
         "Modell allein. Weil übersehene Betrugsfälle hier mit ihrem tatsächlichen "
         "Betrag zu Buche schlagen, wiegen wenige teure Fälle schwerer als viele "
         "kleine. Werden Fehlalarme stärker gewichtet, steigt der optimale "
-        "Schwellwert. Alle Beträge beziehen sich auf das 10.000er-Testset."
+        "Schwellwert. Alle Beträge beziehen sich auf das 7.000er-Testset."
     )
 else:
     st.info(
@@ -214,5 +214,5 @@ else:
         "unabhängig vom Transaktionsbetrag. Das Kostenminimum verschiebt sich mit "
         "dem Verhältnis der beiden Pauschalen: Je teurer ein übersehener Fall "
         "angesetzt wird, desto niedriger der optimale Schwellwert. Alle Beträge "
-        "beziehen sich auf das 10.000er-Testset."
+        "beziehen sich auf das 7.000er-Testset."
     )

@@ -20,8 +20,9 @@ models = res["models"]
 
 st.markdown(
     f"""
-Vier Modelle wurden auf denselben {u.fmt_int(res['test_size'])} Test-Transaktionen
-verglichen. Accuracy ist hier wenig aussagekräftig. Bei einer Betrugsrate von
+Vier klassische Modelle und der beste LLM-Ansatz wurden auf demselben Testset
+verglichen: {u.fmt_int(res['test_size'])} Transaktionen mit {res['n_fraud_test']}
+Betrugsfällen, identisch für alle Ansätze. Accuracy ist hier wenig aussagekräftig. Bei einer Betrugsrate von
 {u.fmt_pct(__import__('config').CANONICAL_FRAUD_RATE)} erreicht bereits ein Modell,
 das jede Transaktion als legitim einstuft, über 99 % Accuracy, ohne einen
 einzigen Betrugsfall zu erkennen. Aussagekräftig sind Precision und Recall der
@@ -51,7 +52,9 @@ llm_row = pd.DataFrame([{
     "Precision": llm_best["precision"], "Recall": llm_best["recall"], "F1": llm_best["f1"],
     "erkannt (TP)": llm_cm[1][1], "übersehen (FN)": llm_cm[1][0], "Fehlalarme (FP)": llm_cm[0][1],
 }])
-tbl_full = pd.concat([tbl, llm_row], ignore_index=True)
+tbl_full = pd.concat([tbl, llm_row], ignore_index=True).sort_values(
+    "F1", ascending=False, ignore_index=True
+)
 
 st.subheader("Kennzahlen der Betrugsklasse")
 melt = tbl_full.melt(id_vars="Modell", value_vars=["Precision", "Recall", "F1"],
@@ -75,21 +78,20 @@ st.dataframe(
 )
 
 st.caption(
-    "* Bestes LLM-Setup aus dem LLM-Vergleich (Seite 7), als Nebenvergleich: "
-    "ausgewertet auf einer 7.000-Zeilen-Teilmenge desselben Eval-Sets (38 Betrugsfälle); "
-    "der Schwellwert liegt dort auf einer Score-Skala von 0 bis 100 und ist deshalb "
-    "nicht angegeben."
+    "* Bestes LLM-Setup aus dem LLM-Vergleich (Seite 7), ausgewertet auf demselben "
+    "Testset; der Schwellwert liegt dort auf einer Score-Skala von 0 bis 100 und ist "
+    "deshalb nicht angegeben."
 )
 
 st.markdown(
     f"""
 Einordnung der Ergebnisse:
-- {best} erreicht den höchsten F1-Wert und damit die beste Balance aus Precision und Recall.
-- XGBoost liegt nahezu gleichauf und hat den höchsten Recall
-  ({models['XGBoost']['recall']:.0%}), erkennt also die meisten Betrugsfälle.
-- Random Forest hat die höchste Precision ({models['Random Forest']['precision']:.0%},
-  also wenige Fehlalarme), übersieht dafür mehr Betrug (Recall
-  {models['Random Forest']['recall']:.0%}).
+- {best} erreicht den höchsten F1-Wert und zugleich den höchsten Recall
+  ({models['LightGBM']['recall']:.0%}), findet also die meisten Betrugsfälle.
+- XGBoost ist der ausgewogenste Ansatz: Precision und Recall liegen mit je
+  {models['XGBoost']['precision']:.0%} gleichauf, zugleich die höchste Precision im Feld.
+- Random Forest liegt dahinter; er übersieht mehr Betrug (Recall
+  {models['Random Forest']['recall']:.0%}) bei ähnlicher Precision.
 - Die logistische Regression fällt deutlich ab. Auch mit hohem Schwellwert bleibt die
   Precision niedrig. Ein lineares Modell reicht für diese Muster nicht aus.
 
@@ -126,11 +128,7 @@ c1, c2, c3 = st.columns(3)
 c1.metric("Erkannt (TP)", u.fmt_int(tp), help="Betrug korrekt gefunden")
 c2.metric("Übersehen (FN)", u.fmt_int(fn), help="Betrug durchgelassen (der teure Fehler)")
 c3.metric("Fehlalarme (FP)", u.fmt_int(fp), help="Legitime Transaktion fälschlich blockiert")
-if sel == llm_label:
-    st.caption(
-        f"Auswertung auf der 7.000-Zeilen-Teilmenge ({llm['n_fraud_test']} Betrugsfälle); "
-        "die Gesamtsummen sind deshalb kleiner als bei den ML-Modellen (10.000 Zeilen)."
-    )
+
 
 st.divider()
 st.caption(

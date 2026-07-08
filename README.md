@@ -18,7 +18,7 @@ fraud_dashboard/
 │   └── rules_engineered.txt   # vom LLM abgeleitete Regeln (aufbereitet)
 ├── scripts/
 │   ├── 01_preprocess.py       # Pipeline: 60 Roh-CSVs -> Parquet + Aggregate
-│   └── 03_lgbm_threshold_data.py # LightGBM auf 10k-Eval -> Threshold-Seite + Case Explorer
+│   └── 03_lgbm_threshold_data.py # LightGBM auf 7k-Testset -> Threshold-Seite + Case Explorer
 ├── notebooks/
 │   └── 01_rohdaten_check.ipynb
 ├── app/
@@ -76,17 +76,20 @@ streamlit run app\Home.py
 
 ## 2b) Daten für Threshold-Seite und Case Explorer erzeugen (einmalig)
 
-Die Seite "Schwellwert und Kosten" arbeitet mit LightGBM-Vorhersagen auf dem
-10.000er-Eval-Set. Diese erzeugt (wie im Team-Lauf nachgebildet):
+Die Seiten "Schwellwert und Kosten" und "Case Explorer" arbeiten mit
+LightGBM-Vorhersagen auf dem 7.000er-Testset (identisch zu den LLM-Läufen).
+Diese erzeugt (wie im Team-Lauf nachgebildet):
 
 ```bat
 pip install lightgbm scikit-learn
 python scripts\03_lgbm_threshold_data.py
 ```
 
-Voraussetzung: `train_engineered.parquet` und `eval_engineered.parquet` liegen
-im Modeling-Ordner unter `datasets\` (Pfad in `config.py` -> `MODELING_DIR`).
-Das Skript verifiziert die Zahlen gegen den geloggten Arbeitspunkt (0,65) und
+Voraussetzung: `train_engineered.parquet`, `eval_engineered.parquet` und das
+Split-Manifest `llm_eval_val_test_split.parquet` liegen im Modeling-Ordner unter
+`datasets\`; die getunten Parameter (`lgbm_best_params.json`) unter `models\`
+(Pfad in `config.py` -> `MODELING_DIR`).
+Das Skript verifiziert die Zahlen gegen den geloggten Arbeitspunkt (0,35) und
 schreibt `results/lgbm_eval_predictions.parquet` sowie
 `results/lgbm_case_explorer.parquet` (beide klein, kommen mit ins Repo).
 Meldet die Verifikation eine Abweichung, liegt das meist an einer anderen
