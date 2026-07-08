@@ -13,8 +13,8 @@ import config as cfg  # noqa: E402
 from config import COLOR_ACCENT, COLOR_FRAUD, COLOR_GRID, COLOR_LEGIT  # noqa: E402
 from config import COST_FP_DEFAULT  # noqa: E402
 
-u.page_setup("Schwellwert und Kosten", "🎚️")
-st.title("🎚️ Schwellwert und Kosten")
+u.page_setup("Schwellenwert und Kosten", "🎚️")
+st.title("🎚️ Schwellenwert und Kosten")
 
 intro_placeholder = st.empty()
 
@@ -43,7 +43,7 @@ _n_total_str = f"{N_TOTAL:,}".replace(",", ".")
 intro_placeholder.markdown(
     f"""
 Ein Modell gibt keine Ja/Nein-Antwort, sondern eine Wahrscheinlichkeit. Erst der
-Schwellwert legt fest, ab wann eine Transaktion als Betrug gilt. Er hat großen
+Schwellenwert legt fest, ab wann eine Transaktion als Betrug gilt. Er hat großen
 Einfluss auf das Ergebnis, und es gibt kein objektiv richtiges Optimum, sondern
 nur eines, das zu den Kosten der jeweiligen Fehler passt.
 
@@ -51,18 +51,18 @@ Gezeigt wird LightGBM, das Modell mit dem höchsten F1-Wert. Zur besseren
 statistischen Aussagekraft läuft diese Analyse auf einem größeren, im Training
 ungenutzten Auswertungsset ({_n_total_str} Transaktionen, {N_FRAUD} Betrugsfälle);
 der Modellvergleich bleibt davon unberührt auf dem gemeinsamen 7.000er-Testset.
-Der Schwellwert lässt sich in 0,01-Schritten verschieben; Treffer, Fehlalarme
-und Kosten ändern sich entsprechend.
+Der Schwellenwert lässt sich in 0,01-Schritten verschieben; 
+Treffer, Fehlalarme und Kosten ändern sich entsprechend.
 """
 )
 
 
 @st.cache_data(show_spinner=False)
 def threshold_table() -> pd.DataFrame:
-    """Vollständige Kennzahl- und Kostenbasis je Schwellwert (0,01–0,99),
+    """Vollständige Kennzahl- und Kostenbasis je Schwellenwert (0,01–0,99),
     vektorisiert und ohne Argumente, damit Streamlit nichts hashen muss.
     Enthält precision, recall, f1, tp, fp, fn und die Summe der übersehenen
-    Betragssummen (fn_amount) je Schwellwert."""
+    Betragssummen (fn_amount) je Schwellenwert."""
     df = pd.read_parquet(cfg.LGBM_EVAL_PREDICTIONS_PATH)
     y = df["y_true"].to_numpy()
     p = df["y_pred_proba"].to_numpy()
@@ -110,10 +110,11 @@ curve = threshold_table()
 f1_best = curve.loc[curve["f1"].idxmax()]
 
 # --- Slider (0,01-Schritte) -------------------------------------------------
+_default_thr = min(list(curve["threshold"]), key=lambda x: abs(x - u.default_threshold()))
 thr = st.select_slider(
-    "Schwellwert (ab welcher Betrugswahrscheinlichkeit wird blockiert?)",
+    "Schwellenwert (ab welcher Betrugswahrscheinlichkeit wird blockiert?)",
     options=list(curve["threshold"]),
-    value=0.35,
+    value=_default_thr,
 )
 row = curve.loc[curve["threshold"] == thr].iloc[0]
 tp, fp, fn = int(row["tp"]), int(row["fp"]), int(row["fn"])
@@ -135,7 +136,7 @@ with colA:
         text=z_text, texttemplate="%{text}", textfont={"size": 17},
         colorscale=[[0, COLOR_GRID], [1, COLOR_FRAUD]], showscale=False,
     ))
-    fig.update_layout(height=340, title=f"Konfusionsmatrix bei Schwellwert {thr:.2f}")
+    fig.update_layout(height=340, title=f"Konfusionsmatrix bei Schwellenwert {thr:.2f}")
     fig.update_yaxes(autorange="reversed")
     st.plotly_chart(fig, width="stretch")
 with colB:
@@ -147,25 +148,25 @@ with colB:
     fig.add_vline(x=float(f1_best["threshold"]), line_dash="dot", line_color="#9B8FD1",
                   annotation_text=f"F1-Maximum ({f1_best['threshold']:.2f})")
     fig.add_vline(x=thr, line_dash="dash", line_color=COLOR_ACCENT)
-    fig.update_layout(height=360, title="Precision und Recall über den Schwellwert",
-                      xaxis_title="Schwellwert", yaxis_range=[0, 1.02],
+    fig.update_layout(height=360, title="Precision und Recall über den Schwellenwert",
+                      xaxis_title="Schwellenwert", yaxis_range=[0, 1.02],
                       legend=dict(orientation="h", yanchor="top", y=-0.2))
     st.plotly_chart(fig, width="stretch")
 
 st.caption(
-    f"Ein niedriger Schwellwert findet mehr Betrug (hoher Recall), erzeugt aber mehr "
-    f"Fehlalarme (niedrige Precision). Ein hoher Schwellwert wirkt umgekehrt. Der "
+    f"Ein niedriger Schwellenwert findet mehr Betrug (hoher Recall), erzeugt aber mehr "
+    f"Fehlalarme (niedrige Precision). Ein hoher Schwellenwert wirkt umgekehrt. Der "
     f"beste Kompromiss nach F1 liegt bei {f1_best['threshold']:.2f} "
     f"(F1 {f1_best['f1']:.3f}); der wirtschaftlich beste Punkt folgt unten aus der "
-    f"Kostenbetrachtung. Der Arbeitspunkt des Teams (0,35) ist die Standardposition "
-    f"des Reglers."
+    f"Kostenbetrachtung. Die Standardposition des Reglers entspricht dem Arbeitspunkt "
+    f"des Teams auf der kalibrierten Skala."
 )
 
 # --- Kostenbetrachtung --------------------------------------------------------
 st.subheader("Kostenbetrachtung")
 st.markdown(
     """
-Die Wahl des Schwellwerts ist letztlich eine Kostenfrage. Für übersehenen Betrug
+Die Wahl des Schwellenwerts ist letztlich eine Kostenfrage. Für übersehenen Betrug
 (FN) stehen zwei Rechenweisen zur Auswahl: der tatsächliche Transaktionsbetrag
 (die FN-Kosten sind dann die Summe der Beträge aller übersehenen Betrugsfälle)
 oder ein fiktiver Pauschalbetrag je Fall. Ein Fehlalarm (FP) verursacht in beiden
@@ -206,30 +207,30 @@ fig.add_vline(x=best_thr, line_dash="dot", line_color=COLOR_FRAUD,
               annotation_text=f"Kostenminimum ({best_thr:.2f})")
 fig.add_vline(x=thr, line_dash="dash", line_color=COLOR_LEGIT,
               annotation_text=f"aktuell ({thr:.2f})")
-fig.update_layout(height=360, xaxis_title="Schwellwert",
+fig.update_layout(height=360, xaxis_title="Schwellenwert",
                   yaxis_title="Gesamtkosten ($) im Auswertungsset")
 st.plotly_chart(fig, width="stretch")
 
 m1, m2, m3 = st.columns(3)
-m1.metric("Kosten beim aktuellen Schwellwert", f"{cur_cost:,.0f} $".replace(",", "."))
+m1.metric("Kosten beim aktuellen Schwellenwert", f"{cur_cost:,.0f} $".replace(",", "."))
 m2.metric("Kostenminimum", f"{min_cost:,.0f} $".replace(",", "."),
-          f"bei Schwellwert {best_thr:.2f}")
+          f"bei Schwellenwert {best_thr:.2f}")
 m3.metric("Einsparpotenzial", f"{cur_cost - min_cost:,.0f} $".replace(",", "."),
           delta_color="inverse")
 
 if fn_mode == "Tatsächlicher Transaktionsbetrag":
     st.info(
-        "Der kostenminimale Schwellwert hängt von den Kostenannahmen ab, nicht vom "
+        "Der kostenminimale Schwellenwert hängt von den Kostenannahmen ab, nicht vom "
         "Modell allein. Weil übersehene Betrugsfälle hier mit ihrem tatsächlichen "
         "Betrag zu Buche schlagen, wiegen wenige teure Fälle schwerer als viele "
         "kleine. Werden Fehlalarme stärker gewichtet, steigt der optimale "
-        "Schwellwert. Alle Beträge beziehen sich auf das Auswertungsset."
+        "Schwellenwert. Alle Beträge beziehen sich auf das Auswertungsset."
     )
 else:
     st.info(
         "In der Pauschal-Variante zählt jeder übersehene Betrugsfall gleich viel, "
         "unabhängig vom Transaktionsbetrag. Das Kostenminimum verschiebt sich mit "
         "dem Verhältnis der beiden Pauschalen: Je teurer ein übersehener Fall "
-        "angesetzt wird, desto niedriger der optimale Schwellwert. Alle Beträge "
+        "angesetzt wird, desto niedriger der optimale Schwellenwert. Alle Beträge "
         "beziehen sich auf das Auswertungsset."
     )

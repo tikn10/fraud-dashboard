@@ -19,8 +19,7 @@ st.markdown(
     """
 Aggregierte Metriken zeigen, wie gut ein Modell insgesamt ist, aber nicht, an
 welchen Stellen es scheitert. Auf dieser Seite lassen sich einzelne Transaktionen
-betrachten: die Vorhersage des Modells, das tatsächliche Label und die Frage, wo
-und warum das Modell danebenliegt.
+betrachten.
 """
 )
 
@@ -35,7 +34,7 @@ if not u.case_explorer_available():
     st.stop()
 
 df = u.load_case_explorer()
-THR = 0.35  # LightGBM-Arbeitspunkt (wie im Modellvergleich)
+THR = u.default_threshold()  # kalibrierter Arbeitspunkt (Skript 03)
 
 df["pred"] = (df["y_pred_proba"] >= THR).astype(int)
 df["Ergebnis"] = np.select(
@@ -56,9 +55,10 @@ for col, key, color in zip(
     col.metric(key, u.fmt_int(counts.get(key, 0)))
 
 st.caption(
-    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM), ausgewertet auf dem größeren, im "
-    "Training ungenutzten Auswertungsset. Die Fallzahlen sind deshalb höher als im "
-    "Modellvergleich, der auf dem gemeinsamen 7.000er-Testset basiert."
+    f"Arbeitspunkt: Schwellwert {THR:.2f} (LightGBM, kalibrierte Wahrscheinlichkeiten) "
+    "auf dem größeren, im Training ungenutzten Auswertungsset. Die Fallzahlen sind "
+    "deshalb höher als im Modellvergleich, der auf dem gemeinsamen 7.000er-Testset "
+    "basiert."
 )
 
 # --- Betrag vs. Wahrscheinlichkeit ----------------------------------------

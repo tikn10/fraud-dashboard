@@ -81,7 +81,7 @@ CANONICAL_FRAUD_RATE = 0.0054   # 0,54 % laut Modell-Logs (Volldatensatz)
 
 # Default-Kostenannahme für die Kostenbetrachtung (anpassbar in der App).
 # Übersehener Betrug (FN) wird betragsgenau gerechnet und braucht keinen Default.
-COST_FP_DEFAULT = 5     # $ je Fehlalarm (manuelle Prüfung, Kundenkontakt)
+COST_FP_DEFAULT = 50     # $ je Fehlalarm (manuelle Prüfung, Kundenkontakt)
 
 # ---------------------------------------------------------------------------
 # Farbschema (eine Signalfarbe für Fraud, eine neutrale für legitim –

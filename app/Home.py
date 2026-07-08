@@ -11,7 +11,7 @@ u.page_setup("Übersicht")
 
 st.title("🛡️ Kreditkarten-Betrugserkennung")
 st.caption(
-    "Uni-Projekt · Synthetischer Sparkov-Datensatz · 10.000 Kunden · 2 Jahre Transaktionen"
+    "Synthetischer Datensatz · 10.000 Kunden · 2 Jahre Transaktionen"
 )
 
 st.markdown(
@@ -43,7 +43,7 @@ if u.require_processed_data():
         f"""
 **Zeitraum:** {meta["ts_min"][:10]} bis {meta["ts_max"][:10]} ·
 **Quelle:** {meta["n_source_files"]} CSV-Dateien (Sparkov-Generator), aufbereitet
-zu Parquet. Personenbezogen wirkende Felder (Name, Adresse, SSN, Kartennummer)
+zu Parquet. Personenbezogene Felder (Name, Adresse, SSN, Kartennummer)
 wurden dabei entfernt bzw. maskiert.
 
 **Seiten:**

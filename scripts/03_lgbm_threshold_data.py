@@ -171,9 +171,32 @@ def main() -> None:
     X_ana = df_ana.drop(columns=["is_fraud"]).reindex(columns=X_train.columns, fill_value=0)
     y_ana = df_ana_raw["is_fraud"].astype(int)
     X_ana_scaled = pd.DataFrame(scaler.transform(X_ana), columns=X_train.columns)
-    proba_ana = model.predict_proba(X_ana_scaled)[:, 1]
+    proba_raw = model.predict_proba(X_ana_scaled)[:, 1]
 
-    # ---- Export (basiert auf dem 100k-Auswertungsset) ----------------------
+    # ---- Probability Calibration (isotonic) auf dem 100k-Set ----------------
+    # Zweck: LightGBM-Scores klumpen nahe 0 und 1; die isotonic-Kalibrierung
+    # verteilt sie ueber den Bereich, damit die Kostenkurve anschaulicher wird.
+    # Rein darstellungsbezogen; der Modellvergleich (7k) bleibt unkalibriert.
+    from sklearn.calibration import CalibratedClassifierCV
+    print("Kalibriere Wahrscheinlichkeiten (isotonic) auf dem Auswertungsset ...")
+    try:
+        # Aeltere scikit-learn-Versionen: cv='prefit'
+        calibrator = CalibratedClassifierCV(model, method="isotonic", cv="prefit")
+        calibrator.fit(X_ana_scaled, y_ana)
+    except Exception:
+        # Neuere scikit-learn-Versionen (>=1.6): FrozenEstimator statt cv='prefit'
+        from sklearn.frozen import FrozenEstimator
+        calibrator = CalibratedClassifierCV(FrozenEstimator(model), method="isotonic")
+        calibrator.fit(X_ana_scaled, y_ana)
+    proba_ana = calibrator.predict_proba(X_ana_scaled)[:, 1]
+
+    # Kurzer Vergleich der Score-Verteilung (Rand vs. Mitte) fuers Log
+    def _mid_share(p):
+        return float(np.mean((p > 0.05) & (p < 0.95)))
+    print(f"  Anteil Scores im Bereich 0,05–0,95: "
+          f"vorher {_mid_share(proba_raw):.1%}, nachher {_mid_share(proba_ana):.1%}")
+
+    # ---- Export (basiert auf dem 100k-Auswertungsset, kalibrierte Scores) ----
     cfg.RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     out = pd.DataFrame({
@@ -188,6 +211,28 @@ def main() -> None:
     case["y_true"] = y_ana.to_numpy().astype("int8")
     case["y_pred_proba"] = proba_ana.astype("float32")
     case.to_parquet(cfg.CASE_EXPLORER_PATH, index=False)
+
+    # Kalibrierten Schwellwert bestimmen, der denselben Betriebspunkt wie der
+    # unkalibrierte Arbeitspunkt 0,35 reproduziert (gleiche TP/FP/FN-Aufteilung).
+    # Da die Kalibrierung monoton ist, liegt die Grenze zwischen der hoechsten
+    # kalibrierten Wahrscheinlichkeit der raw<0,35-Faelle und der niedrigsten der
+    # raw>=0,35-Faelle.
+    RAW_WP = 0.35
+    below = proba_ana[proba_raw < RAW_WP]
+    above = proba_ana[proba_raw >= RAW_WP]
+    if len(above) and len(below):
+        thr_cal = round((float(below.max()) + float(above.min())) / 2, 2)
+    elif len(above):
+        thr_cal = round(float(above.min()), 2)
+    else:
+        thr_cal = RAW_WP
+    thr_cal = min(max(thr_cal, 0.01), 0.99)
+    import json as _json
+    (cfg.RESULTS_DIR / "threshold_meta.json").write_text(
+        _json.dumps({"default_threshold": thr_cal, "raw_working_point": RAW_WP,
+                     "calibrated": True}, indent=2)
+    )
+    print(f"  Kalibrierter Arbeitspunkt (entspricht raw {RAW_WP}): {thr_cal}")
 
     print("\n" + "=" * 64)
     print(f"Threshold-/Kosten- und Case-Explorer-Daten auf {len(out):,} Zeilen "

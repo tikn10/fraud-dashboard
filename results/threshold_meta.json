@@ -1,0 +1,5 @@
+{
+  "default_threshold": 0.42,
+  "raw_working_point": 0.35,
+  "calibrated": true
+}

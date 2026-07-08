@@ -70,6 +70,14 @@ def load_llm_results() -> dict:
     return json.loads(cfg.LLM_RESULTS_PATH.read_text())
 
 
+def default_threshold(fallback: float = 0.35) -> float:
+    """Kalibrierter Standard-Arbeitspunkt aus Skript 03, sonst Fallback."""
+    try:
+        return float(json.loads(cfg.THRESHOLD_META_PATH.read_text())["default_threshold"])
+    except Exception:
+        return fallback
+
+
 def lgbm_predictions_available() -> bool:
     return cfg.LGBM_EVAL_PREDICTIONS_PATH.exists()
 
